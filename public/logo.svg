@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48">
+  <defs>
+    <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C5CFF"/>
+      <stop offset="50%" stop-color="#4A90FF"/>
+      <stop offset="100%" stop-color="#00D4FF"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#7C5CFF"/>
+    </linearGradient>
+  </defs>
+  <!-- Icon mark: rounded square with "A" -->
+  <rect x="2" y="6" width="36" height="36" rx="8" fill="url(#logoGrad)"/>
+  <path d="M20 12.5L12.5 36h3.4l1.5-3.8h5.2l1.5 3.8h3.4L20 12.5zm0 5.5l1.9 4.8h-3.8L20 18z" fill="#fff" opacity="0.95"/>
+  <!-- Wordmark -->
+  <text x="48" y="33" font-family="'Outfit', 'Inter', sans-serif" font-weight="800" font-size="26" letter-spacing="-0.5" fill="url(#textGrad)">Aurora</text>
+</svg>

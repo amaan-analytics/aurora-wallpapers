@@ -35,6 +35,54 @@ export function Detail() {
   const [zoomMode, setZoomMode] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
+  // Swipe logic for mobile navigation between similar wallpapers
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
+
+  const handleTouchStart = (e) => {
+    setTouchStartX(e.targetTouches[0].clientX);
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    const swipeDistance = touchStartX - touchEndX;
+    const minSwipeDistance = 60;
+
+    if (swipeDistance > minSwipeDistance) {
+      handleNextWallpaper();
+    } else if (swipeDistance < -minSwipeDistance) {
+      handlePrevWallpaper();
+    }
+  };
+
+  const handleNextWallpaper = () => {
+    if (similarWallpapers.length === 0) return;
+    const currentIndex = similarWallpapers.findIndex(w => Number(w.id) === Number(wallpaper?.id));
+    let nextIndex = 0;
+    if (currentIndex !== -1) {
+      nextIndex = (currentIndex + 1) % similarWallpapers.length;
+    } else {
+      nextIndex = 0;
+    }
+    navigate(`/wallpaper/${similarWallpapers[nextIndex].id}`);
+  };
+
+  const handlePrevWallpaper = () => {
+    if (similarWallpapers.length === 0) return;
+    const currentIndex = similarWallpapers.findIndex(w => Number(w.id) === Number(wallpaper?.id));
+    let prevIndex = similarWallpapers.length - 1;
+    if (currentIndex !== -1) {
+      prevIndex = (currentIndex - 1 + similarWallpapers.length) % similarWallpapers.length;
+    } else {
+      prevIndex = similarWallpapers.length - 1;
+    }
+    navigate(`/wallpaper/${similarWallpapers[prevIndex].id}`);
+  };
+
   // Close lightbox on ESC key & lock scroll
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') setLightboxOpen(false); };
@@ -170,7 +218,7 @@ export function Detail() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 sm:py-8 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 pt-6 pb-24 sm:py-8 space-y-12 lg:pb-8">
       <SEO 
         title={`Wallpaper by ${wallpaper.photographer}`}
         description={`Download high resolution wallpaper by ${wallpaper.photographer}. Resolution: ${wallpaper.width}x${wallpaper.height}.`}
@@ -194,7 +242,12 @@ export function Detail() {
         {/* Large Preview Image Column */}
         <div className="lg:col-span-8 flex flex-col items-center justify-center relative bg-card-theme/20 border border-border-theme/30 rounded-3xl overflow-hidden p-2 min-h-[50vh] lg:min-h-[70vh]">
           
-          <div className="relative w-full h-full flex items-center justify-center max-h-[75vh]">
+          <div 
+            className="relative w-full h-full flex items-center justify-center max-h-[75vh]"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
               src={wallpaper.src.large2x || wallpaper.src.original}
               alt={wallpaper.alt || 'Wallpaper preview'}
@@ -222,6 +275,9 @@ export function Detail() {
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-sm"
             onClick={() => setLightboxOpen(false)}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             {/* Close button */}
             <button
@@ -405,6 +461,45 @@ export function Detail() {
           loading={false} 
           hasMore={false} 
         />
+      </div>
+
+      {/* Mobile Fixed Bottom Action Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-card-theme/90 backdrop-blur-xl border-t border-border-theme/40 p-4 flex items-center justify-between gap-3 lg:hidden animate-in slide-in-from-bottom duration-300">
+        {/* Favorite */}
+        <button
+          onClick={handleFavoriteToggle}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
+            isFavorited
+              ? 'bg-accent-theme/10 border-accent-theme/35 text-accent-theme'
+              : 'bg-background-theme/60 border-border-theme/40 text-text-secondary hover:text-text-primary'
+          }`}
+        >
+          <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+          <span>{isFavorited ? 'Saved' : 'Favorite'}</span>
+        </button>
+
+        {/* Download Free */}
+        <div className="flex-[2] relative">
+          <button
+            onClick={() => handleDownload('Original', wallpaper.src.original)}
+            disabled={isDownloading}
+            className="w-full flex items-center justify-center gap-2 py-3 bg-accent-theme text-white text-xs font-bold rounded-xl shadow-lg shadow-accent-theme/20 hover:bg-accent-theme/90 active:scale-95 transition-all disabled:opacity-60"
+          >
+            <Download className={`w-4 h-4 ${isDownloading ? 'animate-bounce' : ''}`} />
+            <span>{isDownloading ? 'Downloading...' : 'Download Free'}</span>
+          </button>
+        </div>
+
+        {/* Share */}
+        <button
+          onClick={shareWallpaper}
+          className="flex-1 flex items-center justify-center gap-1.5 py-3 bg-background-theme/60 border border-border-theme/40 text-text-secondary hover:text-text-primary rounded-xl active:scale-95 transition-all"
+        >
+          {shareFeedback ? <Check className="w-4 h-4 text-emerald-500 animate-in zoom-in" /> : <Share2 className="w-4 h-4" />}
+          <span className="text-xs font-bold">
+            {shareFeedback ? 'Copied' : 'Share'}
+          </span>
+        </button>
       </div>
 
     </div>

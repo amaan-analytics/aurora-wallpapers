@@ -37,11 +37,18 @@ export function Navbar() {
   const themeRef = useRef(null);
   const categoryRef = useRef(null);
   const profileRef = useRef(null);
+  const searchInputRef = useRef(null);
 
-  // Sync search input with search URL param if on home page
+  // Sync search input with search URL param and check focus
   useEffect(() => {
     const q = searchParams.get('search') || '';
     setSearchQuery(q);
+    
+    if (searchParams.get('focus') === 'search' && searchInputRef.current) {
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
+    }
   }, [searchParams]);
 
   // Click outside handlers to close dropdowns
@@ -105,21 +112,22 @@ export function Navbar() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-accent-theme to-[#a890ff] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-text-primary via-[#b9a5ff] to-accent-theme bg-clip-text text-transparent">
+            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-text-primary via-[#b9a5ff] to-accent-theme bg-clip-text text-transparent hidden sm:inline-block">
               Aurora
             </span>
           </Link>
 
-          {/* Search bar (Desktop) */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-grow max-w-md relative mx-4">
+          {/* Search bar (Always visible and responsive) */}
+          <form onSubmit={handleSearchSubmit} className="flex flex-grow max-w-[160px] sm:max-w-xs md:max-w-md relative mx-1.5 sm:mx-4">
             <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary" />
+              <Search className="absolute left-2.5 md:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-text-secondary" />
               <input
+                ref={searchInputRef}
                 type="text"
-                placeholder="Search premium wallpapers..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm rounded-xl text-text-primary glass-input focus:ring-1 focus:ring-accent-theme transition-all duration-200"
+                className="w-full pl-8 pr-3 md:pl-10 md:pr-4 py-1.5 md:py-2 text-xs md:text-sm rounded-xl text-text-primary glass-input focus:ring-1 focus:ring-accent-theme transition-all duration-200"
               />
             </div>
           </form>

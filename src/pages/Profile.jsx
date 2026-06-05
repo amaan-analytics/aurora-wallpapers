@@ -113,7 +113,7 @@ export function Profile() {
   if (!user) return null;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 pt-8 pb-28 md:pb-8 space-y-10">
       <SEO title="My Profile" description="Manage your Aurora Wallpapers account and view saved designs." />
 
       {/* User Information Header Card */}

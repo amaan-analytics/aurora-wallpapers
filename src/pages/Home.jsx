@@ -130,7 +130,7 @@ export function Home() {
   };
 
   return (
-    <div className="min-h-screen pb-16 relative">
+    <div className="min-h-screen pb-28 md:pb-16 relative">
       <SEO 
         title={searchQuery ? `Search results for "${searchQuery}"` : activeCategory ? `Category: ${activeCategory}` : 'Home'}
         description={searchQuery ? `Explore exquisite 4K wallpapers matching "${searchQuery}".` : 'Discover high-fidelity background themes for desktop and mobile.'}

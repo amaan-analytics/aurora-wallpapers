@@ -42,10 +42,15 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event: service routing strategies
 self.addEventListener('fetch', (event) => {
-  const requestUrl = new URL(event.request.url);
-
   // Ignore non-GET requests (e.g. Firestore, Auth operations)
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  const requestUrl = new URL(event.request.url);
+
+  // Ignore non-http/https protocols (e.g. chrome-extension://, data:, blob:)
+  if (!requestUrl.protocol.startsWith('http')) {
     return;
   }
 
@@ -63,7 +68,10 @@ self.addEventListener('fetch', (event) => {
           
           return fetch(event.request).then((networkResponse) => {
             if (networkResponse.status === 200) {
-              cache.put(event.request, networkResponse.clone());
+              const responseToCache = networkResponse.clone(); // Clone synchronously immediately
+              cache.put(event.request, responseToCache).catch((err) => {
+                console.warn('Aurora SW: Failed to put image in cache', err);
+              });
             }
             return networkResponse;
           }).catch(() => {
@@ -81,13 +89,12 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
         // Cache new successful GET requests
-        if (
-          networkResponse.status === 200 && 
-          !requestUrl.pathname.includes('chrome-extension') &&
-          !event.request.url.startsWith('chrome-extension://')
-        ) {
+        if (networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone(); // Clone synchronously immediately
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, networkResponse.clone());
+            cache.put(event.request, responseToCache).catch((err) => {
+              console.warn('Aurora SW: Failed to put asset in cache', err);
+            });
           });
         }
         return networkResponse;

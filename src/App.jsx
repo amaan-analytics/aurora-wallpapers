@@ -10,6 +10,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
+import { MobileBottomNav } from './components/MobileBottomNav';
 
 // Pages
 import { Home } from './pages/Home';
@@ -60,6 +61,9 @@ function App() {
                 <Route path="*" element={<Home />} />
               </Routes>
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
 
             {/* Footer */}
             <footer className="border-t border-border-theme/40 bg-card-theme/30 py-8 text-center text-xs text-text-secondary">
