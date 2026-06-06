@@ -7,18 +7,36 @@
       "src": "/icons/icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
     }
   ],
   "start_url": "/",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#0D0F1A",
+  "theme_color": "#0D0F1A",
   "display": "standalone",
   "orientation": "portrait-primary",
   "categories": ["personalization", "utilities"],

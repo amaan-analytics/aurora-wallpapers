@@ -13,20 +13,6 @@ import {
   ShieldCheck
 } from 'lucide-react';
 
-// Inline Aurora "A" SVG logo mark — crisp at any size, no external file needed
-const AuroraLogoMark = ({ size = 36 }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={size} height={size} aria-hidden="true">
-    <defs>
-      <linearGradient id="navLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor="#7C5CFF"/>
-        <stop offset="50%" stopColor="#4A90FF"/>
-        <stop offset="100%" stopColor="#00D4FF"/>
-      </linearGradient>
-    </defs>
-    <rect width="32" height="32" rx="7" fill="url(#navLogoGrad)"/>
-    <path d="M16 5.5L7.5 26h3.8l1.8-4.5h5.8L20.7 26h3.8L16 5.5zm0 6.2l2.1 5.3h-4.2L16 11.7z" fill="#fff" opacity="0.95"/>
-  </svg>
-);
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 
@@ -122,11 +108,13 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16 gap-4">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0" onClick={() => navigate('/')}>
-            <div className="group-hover:scale-105 transition-transform duration-300 drop-shadow-lg">
-              <AuroraLogoMark size={36} />
-            </div>
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-[#b9a5ff] to-[#7C5CFF] bg-clip-text text-transparent hidden sm:inline-block">
+          <Link to="/" className="flex items-center gap-2 group flex-shrink-0" onClick={() => navigate('/')}>
+            <img
+              src="/icons/icon-512.png"
+              alt="Aurora Logo"
+              className="w-9 h-9 md:w-[42px] md:h-[42px] rounded-xl object-cover transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_10px_rgba(123,79,255,0.8)]"
+            />
+            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-text-primary via-[#b9a5ff] to-accent-theme bg-clip-text text-transparent hidden sm:inline-block">
               Aurora
             </span>
           </Link>

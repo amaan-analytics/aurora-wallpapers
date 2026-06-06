@@ -66,21 +66,27 @@ function App() {
             <MobileBottomNav />
 
             {/* Footer */}
-            <footer className="border-t border-border-theme/40 bg-card-theme/30 py-8 text-center text-xs text-text-secondary">
-              <div className="max-w-7xl mx-auto px-4 space-y-3">
-                <div className="flex justify-center items-center gap-1.5">
-                  <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-accent-theme to-[#a890ff] flex items-center justify-center text-white">
-                    <Sparkles className="w-3 h-3" />
-                  </div>
-                  <span className="font-extrabold text-sm text-text-primary tracking-tight">Aurora</span>
+            <footer className="w-full border-t border-border-theme/30 bg-card-theme/10 pt-10 pb-28 md:pb-10 text-center transition-all duration-300">
+              <div className="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center space-y-3 group/footer">
+                
+                {/* Creator line */}
+                <div className="flex items-center justify-center gap-1 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors duration-300">
+                  <span>Built with</span>
+                  <span className="text-red-500 animate-pulse inline-block mx-0.5 select-none text-base">❤️</span>
+                  <span>by</span>
+                  <span className="font-bold bg-gradient-to-r from-accent-theme via-[#a890ff] to-[#dfd5ff] bg-clip-text text-transparent transition-all duration-300 group-hover/footer:drop-shadow-[0_0_12px_rgba(124,92,255,0.6)]">
+                    Amaan Ul Haq
+                  </span>
                 </div>
-                <p>
-                  &copy; {new Date().getFullYear()} Aurora Wallpapers. All rights reserved. 
-                  Images sourced via Pexels API.
-                </p>
-                <p className="flex items-center justify-center gap-1 text-[10px]">
-                  Crafted with <Heart className="w-3 h-3 text-rose-500 fill-current" /> as a premium Progressive Web App.
-                </p>
+
+                {/* Copyright line */}
+                <div className="text-xs text-text-secondary/80 font-normal">
+                  Aurora Wallpapers &copy; 2026
+                </div>
+
+                {/* Subtle Neon Underline bar */}
+                <div className="w-10 h-0.5 bg-gradient-to-r from-accent-theme to-[#a890ff] rounded-full scale-x-75 opacity-20 group-hover/footer:scale-x-150 group-hover/footer:opacity-100 group-hover/footer:shadow-[0_0_10px_rgba(124,92,255,0.8)] transition-all duration-500" />
+                
               </div>
             </footer>
           </div>

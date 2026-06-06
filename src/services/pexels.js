@@ -6,6 +6,33 @@ const isMockMode =
   PEXELS_API_KEY.includes('placeholder') || 
   PEXELS_API_KEY === '';
 
+// Wallpaper categories for random discovery
+const DISCOVERY_CATEGORIES = [
+  'Nature', 'Abstract', 'Space', 'Cyberpunk', 'Minimalist',
+  'Gaming', 'Technology', 'Architecture', 'Mountains', 'Ocean', 'AI Art'
+];
+
+// Pick a random category for homepage discovery
+export const getRandomCategory = () =>
+  DISCOVERY_CATEGORIES[Math.floor(Math.random() * DISCOVERY_CATEGORIES.length)];
+
+// Pick a random page number for fresh results
+export const getRandomPage = (max = 100) =>
+  Math.floor(Math.random() * max) + 1;
+
+// Fisher-Yates shuffle — used for mock mode randomization
+const shuffleArray = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// In-memory cache for shuffled mock search results to ensure pagination stability
+const mockSearchCache = {};
+
 // High quality mock wallpapers from unsplash for developer testing
 const MOCK_WALLPAPERS = [
   {
@@ -258,17 +285,36 @@ const pexelsRequest = async (endpoint, params = {}) => {
 // Pexels API Exposed Services
 // -----------------------------
 
-export const getCuratedWallpapers = async (page = 1, perPage = 20) => {
+export const getCuratedWallpapers = async (page = 1, perPage = 20, shuffle = false) => {
   if (isMockMode) {
-    // Return mock wallpapers page by page
-    const totalResults = MOCK_WALLPAPERS.length;
+    const cacheKey = `curated_${shuffle ? 'shuffled' : 'stable'}`;
+    
+    if (page === 1) {
+      delete mockSearchCache[cacheKey];
+    }
+
+    let filtered;
+    if (mockSearchCache[cacheKey]) {
+      filtered = mockSearchCache[cacheKey];
+    } else {
+      filtered = [...MOCK_WALLPAPERS];
+      if (shuffle) {
+        filtered = shuffleArray(filtered).map(item => ({
+          ...item,
+          id: item.id + Math.floor(Math.random() * 10000)
+        }));
+      }
+      mockSearchCache[cacheKey] = filtered;
+    }
+
+    const totalResults = filtered.length;
     const startIndex = (page - 1) * perPage;
-    const paginatedItems = MOCK_WALLPAPERS.slice(startIndex, startIndex + perPage);
+    const paginatedItems = filtered.slice(startIndex, startIndex + perPage);
     
     // Seed extra mock items for infinite scroll simulation
     if (paginatedItems.length === 0 && page <= 5) {
       // Loop mock items with new IDs
-      const seeded = MOCK_WALLPAPERS.map((item, idx) => ({
+      const seeded = filtered.map((item, idx) => ({
         ...item,
         id: item.id + (page * 100)
       }));
@@ -290,27 +336,78 @@ export const getCuratedWallpapers = async (page = 1, perPage = 20) => {
     };
   }
 
-  // Real Curated Endpoint (forcing wallpaper parameters - vertical/horizontal filters, minimum dimensions)
+  // Real Curated Endpoint
   return pexelsRequest('https://api.pexels.com/v1/curated', {
     page,
     per_page: perPage
   });
 };
 
-export const searchWallpapers = async (queryText, page = 1, perPage = 20, orientation = '') => {
+/**
+ * Fetch fresh random wallpapers for homepage discovery.
+ * Uses a random category + random page so every refresh shows new content.
+ */
+export const getRandomWallpapers = async (perPage = 20) => {
+  const randomCategory = getRandomCategory();
+  const randomPage = getRandomPage(50);
+
+  if (isMockMode) {
+    // Shuffle the mock array so order changes on every call
+    const shuffled = shuffleArray(MOCK_WALLPAPERS).map((item, idx) => ({
+      ...item,
+      id: item.id + Math.floor(Math.random() * 1000) // unique IDs per refresh
+    }));
+    return {
+      photos: shuffled.slice(0, perPage),
+      page: 1,
+      per_page: perPage,
+      total_results: MOCK_WALLPAPERS.length * 5,
+      next_page: 2,
+      _category: randomCategory
+    };
+  }
+
+  const response = await pexelsRequest('https://api.pexels.com/v1/search', {
+    query: randomCategory,
+    page: randomPage,
+    per_page: perPage
+  });
+
+  return { ...response, _category: randomCategory };
+};
+
+export const searchWallpapers = async (queryText, page = 1, perPage = 20, orientation = '', shuffle = false) => {
   if (isMockMode) {
     const normalizedQuery = queryText.toLowerCase();
+    const cacheKey = `${normalizedQuery}_${shuffle ? 'shuffled' : 'stable'}`;
     
-    // Filter matching category or photographer
-    let filtered = MOCK_WALLPAPERS.filter(item => 
-      item.category.toLowerCase().includes(normalizedQuery) ||
-      item.photographer.toLowerCase().includes(normalizedQuery) ||
-      normalizedQuery.includes(item.category.toLowerCase())
-    );
+    // Reset the cache for page 1 to allow fresh randomization on refresh
+    if (page === 1) {
+      delete mockSearchCache[cacheKey];
+    }
 
-    // If nothing matches, return all as general search results
-    if (filtered.length === 0) {
-      filtered = MOCK_WALLPAPERS;
+    let filtered;
+    if (mockSearchCache[cacheKey]) {
+      filtered = mockSearchCache[cacheKey];
+    } else {
+      filtered = MOCK_WALLPAPERS.filter(item => 
+        item.category.toLowerCase().includes(normalizedQuery) ||
+        item.photographer.toLowerCase().includes(normalizedQuery) ||
+        normalizedQuery.includes(item.category.toLowerCase())
+      );
+
+      if (filtered.length === 0) {
+        filtered = MOCK_WALLPAPERS;
+      }
+
+      if (shuffle) {
+        filtered = shuffleArray(filtered).map(item => ({
+          ...item,
+          id: item.id + Math.floor(Math.random() * 10000) // Ensure unique IDs per refresh
+        }));
+      }
+
+      mockSearchCache[cacheKey] = filtered;
     }
 
     const startIndex = (page - 1) * perPage;

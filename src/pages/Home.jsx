@@ -29,13 +29,17 @@ export function Home() {
   const [localSearch, setLocalSearch] = useState('');
   const [wallpaperOfTheDay, setWallpaperOfTheDay] = useState(null);
 
+  // Discovery session references for stable pagination of randomized categories/pages
+  const randomStartPageRef = React.useRef(1);
+  const categoryStartPageRef = React.useRef(1);
+
   // Load wallpaper of the day (once)
   useEffect(() => {
     const fetchWOTD = async () => {
       try {
         const res = await getCuratedWallpapers(1, 10);
         if (res.photos && res.photos.length > 0) {
-          // Select 2nd photo for variety
+          // Select 2nd photo for stable variety
           setWallpaperOfTheDay(res.photos[Math.min(res.photos.length - 1, 1)]);
         }
       } catch (err) {
@@ -73,12 +77,30 @@ export function Home() {
 
     try {
       let response;
-      const targetQuery = searchQuery || activeCategory;
 
-      if (targetQuery) {
-        response = await searchWallpapers(targetQuery, pageNum, 16, orientationFilter);
+      if (searchQuery) {
+        // Search query: Keep results stable starting at pageNum
+        response = await searchWallpapers(searchQuery, pageNum, 16, orientationFilter, false);
+      } else if (activeCategory) {
+        // Category filtering: randomize starting page but keep sequential scrolling stable
+        if (isReset) {
+          categoryStartPageRef.current = Math.floor(Math.random() * 100) + 1;
+        }
+        let targetPage = categoryStartPageRef.current + pageNum - 1;
+        if (targetPage > 100) {
+          targetPage = ((targetPage - 1) % 100) + 1;
+        }
+        response = await searchWallpapers(activeCategory, targetPage, 16, orientationFilter, true);
       } else {
-        response = await getCuratedWallpapers(pageNum, 16);
+        // Homepage: load curated wallpapers (mixed categories) on a random page
+        if (isReset) {
+          randomStartPageRef.current = Math.floor(Math.random() * 100) + 1;
+        }
+        let targetPage = randomStartPageRef.current + pageNum - 1;
+        if (targetPage > 100) {
+          targetPage = ((targetPage - 1) % 100) + 1;
+        }
+        response = await getCuratedWallpapers(targetPage, 16, true);
       }
 
       const newPhotos = response.photos || [];
@@ -279,7 +301,7 @@ export function Home() {
                 </span>
                 
                 <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white max-w-lg leading-tight drop-shadow-md">
-                  Discover {wallpaperOfTheDay.category || "Exquisite Space"} Art
+                  Discover {wallpaperOfTheDay.category || "Exquisite"} Art
                 </h2>
                 
                 <p className="text-xs text-white/70">
