@@ -12,6 +12,22 @@ const CATEGORIES = [
   'Architecture', 'Mountains', 'Ocean', 'AI Art'
 ];
 
+const CATEGORY_MAPPING = {
+  "Gaming": "video game",
+  "Anime Inspired": "anime",
+  "AI Art": "digital art",
+  "Cars": "sports car",
+  "Nature": "nature landscape",
+  "Cyberpunk": "cyberpunk neon",
+  "Space": "galaxy space",
+  "Technology": "technology futuristic",
+  "Mountains": "mountain landscape",
+  "Ocean": "ocean waves",
+  "Architecture": "modern architecture",
+  "Minimalist": "minimalist wallpaper",
+  "Abstract": "abstract art"
+};
+
 export function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -84,13 +100,16 @@ export function Home() {
       } else if (activeCategory) {
         // Category filtering: randomize starting page but keep sequential scrolling stable
         if (isReset) {
-          categoryStartPageRef.current = Math.floor(Math.random() * 100) + 1;
+          categoryStartPageRef.current = 1;
         }
         let targetPage = categoryStartPageRef.current + pageNum - 1;
         if (targetPage > 100) {
           targetPage = ((targetPage - 1) % 100) + 1;
         }
-        response = await searchWallpapers(activeCategory, targetPage, 16, orientationFilter, true);
+        const searchTerm =
+          CATEGORY_MAPPING[activeCategory] || activeCategory;
+
+        response = await searchWallpapers(searchTerm, targetPage, 16, orientationFilter, true);
       } else {
         // Homepage: load curated wallpapers (mixed categories) on a random page
         if (isReset) {
@@ -103,7 +122,21 @@ export function Home() {
         response = await getCuratedWallpapers(targetPage, 16, true);
       }
 
-      const newPhotos = response.photos || [];
+      let newPhotos = response.photos || [];
+
+      if (activeCategory && newPhotos.length === 0) {
+        console.warn(
+          `No wallpapers found for ${activeCategory}. Loading fallback wallpapers.`
+        );
+
+        const fallbackResponse = await getCuratedWallpapers(
+          1,
+          16,
+          true
+        );
+
+        newPhotos = fallbackResponse.photos || [];
+      }
       
       setWallpapers(prev => {
         if (isReset) return newPhotos;
