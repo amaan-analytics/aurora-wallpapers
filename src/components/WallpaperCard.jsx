@@ -86,8 +86,8 @@ export function WallpaperCard({ wallpaper, onFavoriteChange }) {
     >
       <div className="relative overflow-hidden w-full bg-surface-theme">
         <img
-          src={wallpaper.src.large2x || wallpaper.src.large}
-          alt={wallpaper.alt || `Wallpaper by ${wallpaper.photographer}`}
+            src={wallpaper.src.large2x}
+          alt={`${wallpaper.category || "4K"} Wallpaper by ${wallpaper.photographer}`}
           onLoad={() => setImageLoaded(true)}
           className={`w-full h-auto object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
             imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
