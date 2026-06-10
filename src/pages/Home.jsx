@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, Flame, ArrowUp, Monitor, Smartphone, RefreshCw } from 'lucide-react';
@@ -43,6 +44,7 @@ const ROUTE_CATEGORY_MAP = {
 };
 
 export function Home() {
+  const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
@@ -206,12 +208,27 @@ export function Home() {
     }
   };
 
+  const categoryRoutes = {
+    'Nature': '/nature-wallpapers',
+    'Abstract': '/abstract-wallpapers',
+    'Space': '/space-wallpapers',
+    'Cyberpunk': '/cyberpunk-wallpapers',
+    'Minimalist': '/minimalist-wallpapers',
+    'Gaming': '/gaming-wallpapers',
+    'Anime Inspired': '/anime-wallpapers',
+    'Cars': '/cars-wallpapers',
+    'Technology': '/technology-wallpapers',
+    'Architecture': '/architecture-wallpapers',
+    'Mountains': '/mountains-wallpapers',
+    'Ocean': '/ocean-wallpapers',
+    'AI Art': '/ai-art-wallpapers'
+  };
+
   const handleCategoryClick = (cat) => {
     if (activeCategory === cat) {
-      // Toggle off
-      setSearchParams({});
+      navigate('/');
     } else {
-      setSearchParams({ category: cat });
+      navigate(categoryRoutes[cat] || '/');
     }
   };
 
