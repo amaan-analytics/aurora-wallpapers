@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Sparkles, Flame, ArrowUp, Monitor, Smartphone, RefreshCw } from 'lucide-react';
 import { getCuratedWallpapers, searchWallpapers } from '../services/pexels';
@@ -28,10 +28,26 @@ const CATEGORY_MAPPING = {
   "Abstract": "abstract art"
 };
 
+const ROUTE_CATEGORY_MAP = {
+  '/gaming-wallpapers': 'Gaming',
+  '/anime-wallpapers': 'Anime Inspired',
+  '/nature-wallpapers': 'Nature',
+  '/cars-wallpapers': 'Cars',
+  '/cyberpunk-wallpapers': 'Cyberpunk',
+  '/space-wallpapers': 'Space',
+  '/technology-wallpapers': 'Technology',
+  '/architecture-wallpapers': 'Architecture',
+  '/mountains-wallpapers': 'Mountains',
+  '/ocean-wallpapers': 'Ocean',
+  '/ai-art-wallpapers': 'AI Art'
+};
+
 export function Home() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
-  const activeCategory = searchParams.get('category') || '';
+  const routeCategory = ROUTE_CATEGORY_MAP[location.pathname] || '';
+  const activeCategory = routeCategory || searchParams.get('category') || '';
 
   const [wallpapers, setWallpapers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -51,19 +67,38 @@ export function Home() {
 
   // Load wallpaper of the day (once)
   useEffect(() => {
-    const fetchWOTD = async () => {
-      try {
-        const res = await getCuratedWallpapers(1, 10);
-        if (res.photos && res.photos.length > 0) {
-          // Select 2nd photo for stable variety
-          setWallpaperOfTheDay(res.photos[Math.min(res.photos.length - 1, 1)]);
-        }
-      } catch (err) {
-        console.warn("Failed to load WOTD:", err);
+  const fetchWOTD = async () => {
+    try {
+      const today = new Date().toDateString();
+
+      const storedDate = localStorage.getItem("aurora-wotd-date");
+      const storedWallpaper = localStorage.getItem("aurora-wotd");
+
+      if (storedDate === today && storedWallpaper) {
+        setWallpaperOfTheDay(JSON.parse(storedWallpaper));
+        return;
       }
-    };
-    fetchWOTD();
-  }, []);
+
+      const page = (new Date().getDate() % 50) + 1;
+
+      const res = await getCuratedWallpapers(page, 20);
+
+      if (res.photos?.length) {
+        const wallpaper =
+          res.photos[new Date().getDate() % res.photos.length];
+
+        localStorage.setItem("aurora-wotd-date", today);
+        localStorage.setItem("aurora-wotd", JSON.stringify(wallpaper));
+
+        setWallpaperOfTheDay(wallpaper);
+      }
+    } catch (err) {
+      console.warn("Failed to load WOTD:", err);
+    }
+  };
+
+  fetchWOTD();
+}, []);
 
   // Sync search input with URL search param
   useEffect(() => {
