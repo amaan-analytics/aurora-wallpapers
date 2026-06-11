@@ -38,6 +38,8 @@ function App() {
 
                 {/* SEO Category Pages */}
                 <Route path="/gaming-wallpapers" element={<Home />} />
+                <Route path="/minimalist-wallpapers" element={<Home />} />
+                <Route path="/abstract-wallpapers" element={<Home />} />
                 <Route path="/anime-wallpapers" element={<Home />} />
                 <Route path="/nature-wallpapers" element={<Home />} />
                 <Route path="/cars-wallpapers" element={<Home />} />

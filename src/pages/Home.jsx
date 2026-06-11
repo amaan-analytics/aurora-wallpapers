@@ -31,6 +31,8 @@ const CATEGORY_MAPPING = {
 
 const ROUTE_CATEGORY_MAP = {
   '/gaming-wallpapers': 'Gaming',
+  '/abstract-wallpapers': 'Abstract',
+  '/minimalist-wallpapers': 'Minimalist',
   '/anime-wallpapers': 'Anime Inspired',
   '/nature-wallpapers': 'Nature',
   '/cars-wallpapers': 'Cars',
