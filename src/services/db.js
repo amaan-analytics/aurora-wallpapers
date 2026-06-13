@@ -15,23 +15,54 @@ import { db, isFirebaseConfigured } from '../firebase/config';
 // Favorites Management
 // ---------------------
 
-export const addFavorite = async (userId, wallpaper) => {
+// Helper to normalize any media item type (wallpaper, image, video, gif) to a standardized db schema
+const normalizeMediaItem = (item) => {
+  if (!item) return null;
+  return {
+    id: item.id,
+    type: item.type || 'wallpaper',
+    imageUrl: item.preview_url || item.src?.large2x || item.src?.original || item.gif_url || '',
+    src: item.src || { 
+      original: item.downloadUrl || item.video_url || item.gif_url || '',
+      large2x: item.preview_url || item.gif_url || '',
+      large: item.preview_url || item.gif_url || '',
+      medium: item.preview_url || item.gif_url || '',
+      small: item.preview_url || item.gif_url || ''
+    },
+    photographer: item.photographer || item.author || 'Artist',
+    photographerUrl: item.photographer_url || item.photographerUrl || item.authorUrl || 'https://aurora.com',
+    avgColor: item.avg_color || item.avgColor || '#15151a',
+    width: item.width || 1280,
+    height: item.height || 720,
+    category: item.category || 'General',
+    title: item.title || 'Visual Artwork'
+  };
+};
+
+export const addFavorite = async (userId, mediaItem) => {
+  const normalized = normalizeMediaItem(mediaItem);
+  if (!normalized) return false;
+
+  const favData = {
+    userId,
+    wallpaperId: normalized.id, // maintain compatibility with existing profile grids
+    type: normalized.type,
+    imageUrl: normalized.imageUrl,
+    src: normalized.src,
+    photographer: normalized.photographer,
+    photographerUrl: normalized.photographerUrl,
+    avgColor: normalized.avgColor,
+    width: normalized.width,
+    height: normalized.height,
+    category: normalized.category,
+    title: normalized.title,
+    createdAt: new Date().toISOString()
+  };
+
   if (isFirebaseConfigured && db) {
     try {
-      const favId = `${userId}_${wallpaper.id}`;
-      await setDoc(doc(db, 'favorites', favId), {
-        userId,
-        wallpaperId: wallpaper.id,
-        imageUrl: wallpaper.src.large2x || wallpaper.src.original,
-        src: wallpaper.src,
-        photographer: wallpaper.photographer,
-        photographerUrl: wallpaper.photographer_url,
-        avgColor: wallpaper.avg_color,
-        width: wallpaper.width,
-        height: wallpaper.height,
-        category: wallpaper.category || 'General',
-        createdAt: new Date().toISOString()
-      });
+      const favId = `${userId}_${normalized.id}`;
+      await setDoc(doc(db, 'favorites', favId), favData);
       return true;
     } catch (error) {
       console.error("Aurora DB: Error adding favorite:", error);
@@ -40,21 +71,9 @@ export const addFavorite = async (userId, wallpaper) => {
   } else {
     // Mock Favorite Save
     const favorites = JSON.parse(localStorage.getItem('aurora-mock-favorites') || '[]');
-    const exists = favorites.some(f => f.userId === userId && f.wallpaperId === wallpaper.id);
+    const exists = favorites.some(f => f.userId === userId && f.wallpaperId === normalized.id);
     if (!exists) {
-      favorites.push({
-        userId,
-        wallpaperId: wallpaper.id,
-        imageUrl: wallpaper.src.large2x || wallpaper.src.original,
-        src: wallpaper.src,
-        photographer: wallpaper.photographer,
-        photographerUrl: wallpaper.photographer_url,
-        avgColor: wallpaper.avg_color,
-        width: wallpaper.width,
-        height: wallpaper.height,
-        category: wallpaper.category || 'General',
-        createdAt: new Date().toISOString()
-      });
+      favorites.push(favData);
       localStorage.setItem('aurora-mock-favorites', JSON.stringify(favorites));
     }
     return true;
@@ -119,23 +138,29 @@ export const getUserFavorites = async (userId) => {
 // Downloads History
 // ---------------------
 
-export const addDownload = async (userId, wallpaper) => {
+export const addDownload = async (userId, mediaItem) => {
+  const normalized = normalizeMediaItem(mediaItem);
+  if (!normalized) return false;
+
   const downloadData = {
     userId: userId || 'anonymous',
-    wallpaperId: wallpaper.id,
-    imageUrl: wallpaper.src.large2x || wallpaper.src.original,
-    src: wallpaper.src,
-    photographer: wallpaper.photographer,
-    photographerUrl: wallpaper.photographer_url,
-    avgColor: wallpaper.avg_color,
-    width: wallpaper.width,
-    height: wallpaper.height,
+    wallpaperId: normalized.id,
+    type: normalized.type,
+    imageUrl: normalized.imageUrl,
+    src: normalized.src,
+    photographer: normalized.photographer,
+    photographerUrl: normalized.photographerUrl,
+    avgColor: normalized.avgColor,
+    width: normalized.width,
+    height: normalized.height,
+    category: normalized.category,
+    title: normalized.title,
     downloadDate: new Date().toISOString()
   };
 
   if (isFirebaseConfigured && db) {
     try {
-      const downloadId = `${userId || 'anon'}_${wallpaper.id}_${Date.now()}`;
+      const downloadId = `${userId || 'anon'}_${normalized.id}_${Date.now()}`;
       await setDoc(doc(db, 'downloads', downloadId), downloadData);
       return true;
     } catch (error) {

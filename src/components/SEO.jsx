@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 export function SEO({ title, description, keywords, image, canonical }) {
   useEffect(() => {
     // Page Title
-    const finalTitle = title ? `${title} | Aurora Wallpapers` : 'Aurora Wallpapers | Premium 4K & UHD Backgrounds';
+    const finalTitle = title ? `${title} | Aurora` : 'Aurora | Visual Discovery Platform - Wallpapers, Images, Videos, & GIFs';
     document.title = finalTitle;
 
     // Helper function to insert or update meta tags
@@ -19,12 +19,12 @@ export function SEO({ title, description, keywords, image, canonical }) {
     };
 
     // Generic Meta Tags
-    setMetaTag('description', description || 'Discover and download premium high-resolution 4K wallpapers for mobile and desktop. Curated abstract, cyberpunk, nature, mountains, ocean, and AI art.');
-    setMetaTag('keywords', keywords || 'wallpapers, 4k backgrounds, download wallpapers, minimalist background, nature, cyberpunk, aurora wallpapers, pwa');
+    setMetaTag('description', description || 'Discover and download premium high-resolution 4K wallpapers, photography images, stock videos, and animated GIFs on Aurora.');
+    setMetaTag('keywords', keywords || 'aurora, wallpapers, photos, stock photos, free images, stock videos, gifs, animated gifs, 4k backgrounds, download wallpapers, pwa');
 
     // Open Graph Tags for social preview
     setMetaTag('og:title', finalTitle, 'property');
-    setMetaTag('og:description', description || 'Elevate your screen with Aurora Wallpapers.', 'property');
+    setMetaTag('og:description', description || 'Discover premium wallpapers, images, videos, and GIFs on Aurora.', 'property');
     setMetaTag('og:type', 'website', 'property');
     setMetaTag('og:image', image || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80', 'property');
     setMetaTag('og:url', window.location.href, 'property');
@@ -32,7 +32,7 @@ export function SEO({ title, description, keywords, image, canonical }) {
     // Twitter Card Tags
     setMetaTag('twitter:card', 'summary_large_image');
     setMetaTag('twitter:title', finalTitle);
-    setMetaTag('twitter:description', description || 'Elevate your screen with Aurora Wallpapers.');
+    setMetaTag('twitter:description', description || 'Discover premium wallpapers, images, videos, and GIFs on Aurora.');
     setMetaTag('twitter:image', image || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&q=80');
 
     // Canonical link tag

@@ -1,254 +1,79 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSearchParams, useLocation, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Sparkles, Flame, ArrowUp, Monitor, Smartphone, RefreshCw } from 'lucide-react';
-import { getCuratedWallpapers, searchWallpapers } from '../services/pexels';
-import { WallpaperGrid } from '../components/WallpaperGrid';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Sparkles, ArrowRight, Image as ImageIcon, Video, Film, Smile, Search } from 'lucide-react';
+import { getImages, getVideos, getGIFs } from '../services/api';
+import { getCuratedWallpapers } from '../services/pexels';
+import { DiscoveryCard } from '../components/DiscoveryCard';
 import { SEO } from '../components/SEO';
-
-const CATEGORIES = [
-  'Nature', 'Abstract', 'Space', 'Cyberpunk', 'Minimalist', 
-  'Gaming', 'Anime Inspired', 'Cars', 'Technology', 
-  'Architecture', 'Mountains', 'Ocean', 'AI Art'
-];
-
-const CATEGORY_MAPPING = {
-  "Gaming": "video game",
-  "Anime Inspired": "anime",
-  "AI Art": "digital art",
-  "Cars": "sports car",
-  "Nature": "nature landscape",
-  "Cyberpunk": "cyberpunk neon",
-  "Space": "galaxy space",
-  "Technology": "technology futuristic",
-  "Mountains": "mountain landscape",
-  "Ocean": "ocean waves",
-  "Architecture": "modern architecture",
-  "Minimalist": "minimalist wallpaper",
-  "Abstract": "abstract art"
-};
-
-const ROUTE_CATEGORY_MAP = {
-  '/gaming-wallpapers': 'Gaming',
-  '/abstract-wallpapers': 'Abstract',
-  '/minimalist-wallpapers': 'Minimalist',
-  '/anime-wallpapers': 'Anime Inspired',
-  '/nature-wallpapers': 'Nature',
-  '/cars-wallpapers': 'Cars',
-  '/cyberpunk-wallpapers': 'Cyberpunk',
-  '/space-wallpapers': 'Space',
-  '/technology-wallpapers': 'Technology',
-  '/architecture-wallpapers': 'Architecture',
-  '/mountains-wallpapers': 'Mountains',
-  '/ocean-wallpapers': 'Ocean',
-  '/ai-art-wallpapers': 'AI Art'
-};
 
 export function Home() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
-  const routeCategory = ROUTE_CATEGORY_MAP[location.pathname] || '';
-  const activeCategory = routeCategory || searchParams.get('category') || '';
-
-  const [wallpapers, setWallpapers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Resolution filtering (Desktop / Mobile orientation search)
-  const [orientationFilter, setOrientationFilter] = useState(''); // '', 'landscape', 'portrait'
+  // States for previews
+  const [wallpapers, setWallpapers] = useState([]);
+  const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [gifs, setGifs] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [localSearch, setLocalSearch] = useState('');
-  const [wallpaperOfTheDay, setWallpaperOfTheDay] = useState(null);
-
-  // Discovery session references for stable pagination of randomized categories/pages
-  const randomStartPageRef = React.useRef(1);
-  const categoryStartPageRef = React.useRef(1);
-
-  // Load wallpaper of the day (once)
   useEffect(() => {
-  const fetchWOTD = async () => {
-    try {
-      const today = new Date().toDateString();
+    const loadPreviews = async () => {
+      setLoading(true);
+      try {
+        const [wallRes, imgRes, vidRes, gifRes] = await Promise.all([
+          getCuratedWallpapers(1, 4),
+          getImages('', 1, 4),
+          getVideos('', 1, 4),
+          getGIFs('', 'Trending', 1, 4)
+        ]);
 
-      const storedDate = localStorage.getItem("aurora-wotd-date");
-      const storedWallpaper = localStorage.getItem("aurora-wotd");
-
-      if (storedDate === today && storedWallpaper) {
-        setWallpaperOfTheDay(JSON.parse(storedWallpaper));
-        return;
+        setWallpapers((wallRes.photos || []).slice(0, 4).map(p => ({ ...p, type: 'wallpaper' })));
+        setImages((imgRes.items || []).slice(0, 4));
+        setVideos((vidRes.items || []).slice(0, 4));
+        setGifs((gifRes.items || []).slice(0, 4));
+      } catch (err) {
+        console.warn("Failed to load dashboard previews:", err);
+      } finally {
+        setLoading(false);
       }
-
-      const page = (new Date().getDate() % 50) + 1;
-
-      const res = await getCuratedWallpapers(page, 20);
-
-      if (res.photos?.length) {
-        const wallpaper =
-          res.photos[new Date().getDate() % res.photos.length];
-
-        localStorage.setItem("aurora-wotd-date", today);
-        localStorage.setItem("aurora-wotd", JSON.stringify(wallpaper));
-
-        setWallpaperOfTheDay(wallpaper);
-      }
-    } catch (err) {
-      console.warn("Failed to load WOTD:", err);
-    }
-  };
-
-  fetchWOTD();
-}, []);
-
-  // Sync search input with URL search param
-  useEffect(() => {
-    setLocalSearch(searchQuery);
-  }, [searchQuery]);
-
-  // Monitor scroll for back-to-top button visibility
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    loadPreviews();
   }, []);
-
-  // Reset page and reload wallpapers when search query, active category, or orientation changes
-  useEffect(() => {
-    setPage(1);
-    setWallpapers([]);
-    setHasMore(true);
-    fetchWallpapers(1, true);
-  }, [searchQuery, activeCategory, orientationFilter]);
-
-  const fetchWallpapers = async (pageNum, isReset = false) => {
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      let response;
-
-      if (searchQuery) {
-        // Search query: Keep results stable starting at pageNum
-        response = await searchWallpapers(searchQuery, pageNum, 16, orientationFilter, false);
-      } else if (activeCategory) {
-        // Category filtering: randomize starting page but keep sequential scrolling stable
-        if (isReset) {
-          categoryStartPageRef.current = 1;
-        }
-        let targetPage = categoryStartPageRef.current + pageNum - 1;
-        if (targetPage > 100) {
-          targetPage = ((targetPage - 1) % 100) + 1;
-        }
-        const searchTerm =
-          CATEGORY_MAPPING[activeCategory] || activeCategory;
-
-        response = await searchWallpapers(searchTerm, targetPage, 16, orientationFilter, true);
-      } else {
-        // Homepage: load curated wallpapers (mixed categories) on a random page
-        if (isReset) {
-          randomStartPageRef.current = Math.floor(Math.random() * 100) + 1;
-        }
-        let targetPage = randomStartPageRef.current + pageNum - 1;
-        if (targetPage > 100) {
-          targetPage = ((targetPage - 1) % 100) + 1;
-        }
-        response = await getCuratedWallpapers(targetPage, 16, true);
-      }
-
-      let newPhotos = response.photos || [];
-
-      if (activeCategory && newPhotos.length === 0) {
-        console.warn(
-          `No wallpapers found for ${activeCategory}. Loading fallback wallpapers.`
-        );
-
-        const fallbackResponse = await getCuratedWallpapers(
-          1,
-          16,
-          true
-        );
-
-        newPhotos = fallbackResponse.photos || [];
-      }
-      
-      setWallpapers(prev => {
-        if (isReset) return newPhotos;
-        // Filter duplicates
-        const existingIds = new Set(prev.map(p => p.id));
-        const filteredNew = newPhotos.filter(p => !existingIds.has(p.id));
-        return [...prev, ...filteredNew];
-      });
-
-      setHasMore(!!response.next_page);
-      setPage(pageNum);
-    } catch (error) {
-      console.error("Error loading wallpapers:", error);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      fetchWallpapers(page + 1);
-    }
-  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (localSearch.trim()) {
-      setSearchParams({ search: localSearch.trim() });
-    } else {
-      setSearchParams({});
+    if (searchQuery.trim()) {
+      navigate(`/explore?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  const categoryRoutes = {
-    'Nature': '/nature-wallpapers',
-    'Abstract': '/abstract-wallpapers',
-    'Space': '/space-wallpapers',
-    'Cyberpunk': '/cyberpunk-wallpapers',
-    'Minimalist': '/minimalist-wallpapers',
-    'Gaming': '/gaming-wallpapers',
-    'Anime Inspired': '/anime-wallpapers',
-    'Cars': '/cars-wallpapers',
-    'Technology': '/technology-wallpapers',
-    'Architecture': '/architecture-wallpapers',
-    'Mountains': '/mountains-wallpapers',
-    'Ocean': '/ocean-wallpapers',
-    'AI Art': '/ai-art-wallpapers'
-  };
-
-  const handleCategoryClick = (cat) => {
-    if (activeCategory === cat) {
-      navigate('/');
-    } else {
-      navigate(categoryRoutes[cat] || '/');
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15 }
     }
   };
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
   };
 
   return (
     <div className="min-h-screen pb-28 md:pb-16 relative">
       <SEO 
-        title={searchQuery ? `Search results for "${searchQuery}"` : activeCategory ? `Category: ${activeCategory}` : 'Home'}
-        description={searchQuery ? `Explore exquisite 4K wallpapers matching "${searchQuery}".` : 'Discover high-fidelity background themes for desktop and mobile.'}
+        title="Aurora | Visual Discovery Platform"
+        description="Welcome to Aurora - discover high-resolution 4K wallpapers, creative stock photography, HD looping footage, and trending GIFs."
       />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-24 px-4 bg-gradient-to-b from-surface-theme/20 via-background-theme/50 to-background-theme">
-        {/* Glow Effects */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[250px] bg-accent-theme/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* Hero Banner Section */}
+      <section className="relative overflow-hidden py-20 sm:py-28 px-4 bg-gradient-to-b from-surface-theme/30 via-background-theme/60 to-background-theme">
+        {/* Glow Backdrops */}
+        <div className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[450px] h-[200px] bg-accent-theme/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/3 left-2/3 -translate-x-1/2 w-[450px] h-[200px] bg-[#a890ff]/10 rounded-full blur-[100px] pointer-events-none" />
 
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
           <motion.div
@@ -258,28 +83,29 @@ export function Home() {
             className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-accent-theme/10 border border-accent-theme/20 text-accent-theme text-xs font-semibold rounded-full"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            Curated 4K Wallpaper Collection
+            Next-Gen Visual Discovery
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-text-primary leading-tight"
+            className="text-4xl sm:text-6xl font-extrabold tracking-tight text-text-primary leading-none"
           >
-            Discover Exquisite <span className="bg-gradient-to-r from-accent-theme via-[#a890ff] to-[#dfd5ff] bg-clip-text text-transparent">Backgrounds</span>
+            Explore the Infinite <br className="hidden sm:inline" />
+            World of <span className="bg-gradient-to-r from-accent-theme via-[#a890ff] to-[#dfd5ff] bg-clip-text text-transparent">Visuals</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-sm sm:text-base md:text-lg text-text-secondary max-w-2xl mx-auto"
+            className="text-sm sm:text-lg text-text-secondary max-w-2xl mx-auto font-medium"
           >
-            Elevate your screen with our premium collection of high-resolution art, nature, minimalist, and cyberpunk wallpapers.
+            One unified dashboard connecting 4K wallpapers, high-res photography, stock video footages, and animated expressions.
           </motion.p>
 
-          {/* Large Hero Search bar */}
+          {/* Unified Search Input */}
           <motion.form
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -291,9 +117,9 @@ export function Home() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
               <input
                 type="text"
-                placeholder="Search wallpapers (e.g., Space, Cyberpunk, Mountains...)"
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
+                placeholder="Search Wallpapers, Photos, Videos & GIFs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 text-base rounded-2xl text-text-primary glass-input focus:ring-2 focus:ring-accent-theme shadow-xl focus:scale-[1.01] transition-all duration-300"
               />
             </div>
@@ -301,128 +127,111 @@ export function Home() {
         </div>
       </section>
 
-      {/* Category Chips & Filter Buttons Container */}
-      <section className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+      {/* Grid Channels Previews */}
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="max-w-7xl mx-auto px-4 space-y-16"
+      >
         
-        {/* Category horizontal scroll bar */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              className={`flex-shrink-0 px-4 py-1.5 text-xs font-semibold rounded-full border transition-all duration-300 ${
-                activeCategory === cat
-                  ? 'bg-accent-theme border-accent-theme text-white shadow-lg shadow-accent-theme/20 scale-105'
-                  : 'bg-card-theme/60 border-border-theme/40 text-text-secondary hover:text-text-primary hover:border-accent-theme/25 hover:bg-card-theme'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Orientation Filter Options */}
-        <div className="flex items-center justify-between border-t border-border-theme/30 pt-4 gap-4 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-text-secondary font-medium mr-1">Filter Layout:</span>
-            <button
-              onClick={() => setOrientationFilter('')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border ${
-                orientationFilter === ''
-                  ? 'bg-text-primary text-background-theme border-text-primary'
-                  : 'bg-card-theme/40 border-border-theme/40 text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              All Layouts
-            </button>
-            <button
-              onClick={() => setOrientationFilter('landscape')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border flex items-center gap-1 ${
-                orientationFilter === 'landscape'
-                  ? 'bg-text-primary text-background-theme border-text-primary'
-                  : 'bg-card-theme/40 border-border-theme/40 text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Monitor className="w-3.5 h-3.5" />
-              Desktop
-            </button>
-            <button
-              onClick={() => setOrientationFilter('portrait')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium border flex items-center gap-1 ${
-                orientationFilter === 'portrait'
-                  ? 'bg-text-primary text-background-theme border-text-primary'
-                  : 'bg-card-theme/40 border-border-theme/40 text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              Mobile
-            </button>
-          </div>
-
-          {/* Heading state */}
-          <div className="text-xs text-text-secondary font-medium">
-            {searchQuery && `Showing results for "${searchQuery}"`}
-            {activeCategory && `Category: ${activeCategory}`}
-            {!searchQuery && !activeCategory && "Curated Selection"}
-          </div>
-        </div>
-      </section>
-
-      {/* Wallpaper of the Day Hero Banner (Only shown on default home page first page) */}
-      {!searchQuery && !activeCategory && !orientationFilter && wallpaperOfTheDay && (
-        <section className="max-w-7xl mx-auto px-4 py-6">
-          <Link to={`/wallpaper/${wallpaperOfTheDay.id}`}>
-            <div className="relative h-64 sm:h-80 md:h-[400px] w-full rounded-3xl overflow-hidden group border border-border-theme/40 glass-card">
-              <img
-                src={wallpaperOfTheDay.src.original}
-                alt="Wallpaper of the day"
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-700 ease-out"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background-theme via-transparent to-black/35"></div>
-              
-              {/* Wallpaper of the day content tags */}
-              <div className="absolute bottom-6 left-6 right-6 flex flex-col justify-end items-start space-y-2.5 z-10">
-                <span className="inline-flex items-center gap-1 px-3 py-1 bg-accent-theme text-white text-[10px] font-bold tracking-wider rounded-full uppercase">
-                  <Flame className="w-3 h-3 fill-current" />
-                  Wallpaper of the Day
-                </span>
-                
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white max-w-lg leading-tight drop-shadow-md">
-                  Discover {wallpaperOfTheDay.category || "Exquisite"} Art
-                </h2>
-                
-                <p className="text-xs text-white/70">
-                  By <span className="font-semibold text-white">{wallpaperOfTheDay.photographer}</span>
-                </p>
-              </div>
+        {/* Channel 1: Wallpapers */}
+        <motion.section variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between border-b border-border-theme/40 pb-4">
+            <div className="flex items-center gap-2">
+              <Film className="w-5 h-5 text-accent-theme" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary">Featured Wallpapers</h2>
             </div>
-          </Link>
-        </section>
-      )}
+            <Link to="/wallpapers" className="text-xs font-bold text-accent-theme hover:underline flex items-center gap-1">
+              View All Wallpapers <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {wallpapers.map(wp => (
+                <DiscoveryCard key={wp.id} item={wp} />
+              ))}
+            </div>
+          )}
+        </motion.section>
 
-      {/* Wallpaper Grid */}
-      <WallpaperGrid 
-        wallpapers={wallpapers} 
-        loading={loading} 
-        hasMore={hasMore} 
-        onLoadMore={handleLoadMore} 
-      />
+        {/* Channel 2: Images */}
+        <motion.section variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between border-b border-border-theme/40 pb-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-accent-theme" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary">Creative Photos</h2>
+            </div>
+            <Link to="/images" className="text-xs font-bold text-accent-theme hover:underline flex items-center gap-1">
+              View All Images <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {images.map(img => (
+                <DiscoveryCard key={img.id} item={img} />
+              ))}
+            </div>
+          )}
+        </motion.section>
 
-      {/* Back to top button */}
-      <AnimatePresence>
-        {showScrollTop && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-40 p-3 rounded-full bg-accent-theme text-white border border-accent-theme/20 shadow-lg shadow-accent-theme/20 hover:scale-110 active:scale-95 transition-all"
-            title="Back to Top"
-          >
-            <ArrowUp className="w-5 h-5" />
-          </motion.button>
-        )}
-      </AnimatePresence>
+        {/* Channel 3: Videos */}
+        <motion.section variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between border-b border-border-theme/40 pb-4">
+            <div className="flex items-center gap-2">
+              <Video className="w-5 h-5 text-accent-theme" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary">Stock Footages</h2>
+            </div>
+            <Link to="/videos" className="text-xs font-bold text-accent-theme hover:underline flex items-center gap-1">
+              View All Videos <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {videos.map(vid => (
+                <DiscoveryCard key={vid.id} item={vid} />
+              ))}
+            </div>
+          )}
+        </motion.section>
+
+        {/* Channel 4: GIFs */}
+        <motion.section variants={itemVariants} className="space-y-6">
+          <div className="flex items-center justify-between border-b border-border-theme/40 pb-4">
+            <div className="flex items-center gap-2">
+              <Smile className="w-5 h-5 text-accent-theme" />
+              <h2 className="text-xl sm:text-2xl font-extrabold text-text-primary">Animated GIFs</h2>
+            </div>
+            <Link to="/gifs" className="text-xs font-bold text-accent-theme hover:underline flex items-center gap-1">
+              View All GIFs <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          {loading ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {gifs.map(gif => (
+                <DiscoveryCard key={gif.id} item={gif} />
+              ))}
+            </div>
+          )}
+        </motion.section>
+
+      </motion.div>
     </div>
   );
 }

@@ -73,7 +73,7 @@ export function Login() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12 relative overflow-hidden bg-gradient-to-b from-surface-theme/20 to-background-theme">
-      <SEO title="Log In" description="Log in to your Aurora Wallpapers account to access your favorites and downloads." />
+      <SEO title="Log In" description="Log in to your Aurora account to access your favorites and downloads." />
 
       {/* Decorative backdrop blur */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-accent-theme/10 rounded-full blur-[100px] pointer-events-none" />

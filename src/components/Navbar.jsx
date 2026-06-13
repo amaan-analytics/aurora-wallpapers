@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { 
   Sun, 
   Moon, 
@@ -27,6 +27,8 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const path = location.pathname;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -70,18 +72,29 @@ export function Navbar() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+    const query = searchQuery.trim();
+    if (query) {
+      if (path === '/' || path === '/explore') {
+        navigate(`/explore?search=${encodeURIComponent(query)}`);
+      } else {
+        navigate(`${path}?search=${encodeURIComponent(query)}`);
+      }
       setMobileMenuOpen(false);
     } else {
-      navigate('/');
+      navigate(path);
     }
   };
 
   const handleCategoryClick = (category) => {
     setCategoryDropdownOpen(false);
     setMobileMenuOpen(false);
-    navigate(`/?category=${encodeURIComponent(category)}`);
+    if (path === '/images') {
+      navigate(`/images?category=${encodeURIComponent(category)}`);
+    } else if (path === '/videos') {
+      navigate(`/videos?category=${encodeURIComponent(category)}`);
+    } else {
+      navigate(`/wallpapers?category=${encodeURIComponent(category)}`);
+    }
   };
 
   const handleLogoutClick = async () => {
@@ -118,6 +131,28 @@ export function Navbar() {
               Aurora
             </span>
           </Link>
+
+          {/* Desktop Nav Links */}
+          <div className="hidden lg:flex items-center gap-1.5 xl:gap-2.5 flex-shrink-0 ml-4">
+            <Link to="/" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              Home
+            </Link>
+            <Link to="/wallpapers" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/wallpapers' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              Wallpapers
+            </Link>
+            <Link to="/images" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/images' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              Images
+            </Link>
+            <Link to="/videos" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/videos' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              Videos
+            </Link>
+            <Link to="/gifs" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/gifs' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              GIFs
+            </Link>
+            <Link to="/explore" className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg transition-colors ${path === '/explore' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary'}`}>
+              Explore
+            </Link>
+          </div>
 
           {/* Search bar (Always visible and responsive) */}
           <form onSubmit={handleSearchSubmit} className="flex flex-grow max-w-[160px] sm:max-w-xs md:max-w-md relative mx-1.5 sm:mx-4">
@@ -288,6 +323,30 @@ export function Navbar() {
       {/* Mobile Menu Panel */}
       {mobileMenuOpen && (
         <div className="md:hidden glass-nav border-t border-border-theme/40 animate-in slide-in-from-top duration-200 p-4 space-y-4">
+          
+          {/* Mobile Navigation Links */}
+          <div className="grid grid-cols-3 gap-1 px-1">
+            <Link to="/" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              Home
+            </Link>
+            <Link to="/wallpapers" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/wallpapers' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              Wallpapers
+            </Link>
+            <Link to="/images" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/images' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              Images
+            </Link>
+            <Link to="/videos" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/videos' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              Videos
+            </Link>
+            <Link to="/gifs" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/gifs' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              GIFs
+            </Link>
+            <Link to="/explore" onClick={() => setMobileMenuOpen(false)} className={`py-1.5 px-2 text-center text-xs font-semibold rounded-lg transition-colors ${path === '/explore' ? 'text-accent-theme bg-accent-theme/10' : 'text-text-secondary hover:text-text-primary hover:bg-card-theme/60'}`}>
+              Explore
+            </Link>
+          </div>
+          
+          <hr className="border-border-theme/40" />
           
           {/* Mobile Search bar */}
           <form onSubmit={handleSearchSubmit} className="relative">

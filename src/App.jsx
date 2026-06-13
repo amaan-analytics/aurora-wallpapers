@@ -13,6 +13,11 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 
 // Pages
 import { Home } from './pages/Home';
+import { Wallpapers } from './pages/Wallpapers';
+import { Images } from './pages/Images';
+import { Videos } from './pages/Videos';
+import { GIFs } from './pages/GIFs';
+import { Explore } from './pages/Explore';
 import { Detail } from './pages/Detail';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
@@ -35,21 +40,26 @@ function App() {
 
                 {/* Home */}
                 <Route path="/" element={<Home />} />
+                <Route path="/wallpapers" element={<Wallpapers />} />
+                <Route path="/images" element={<Images />} />
+                <Route path="/videos" element={<Videos />} />
+                <Route path="/gifs" element={<GIFs />} />
+                <Route path="/explore" element={<Explore />} />
 
                 {/* SEO Category Pages */}
-                <Route path="/gaming-wallpapers" element={<Home />} />
-                <Route path="/minimalist-wallpapers" element={<Home />} />
-                <Route path="/abstract-wallpapers" element={<Home />} />
-                <Route path="/anime-wallpapers" element={<Home />} />
-                <Route path="/nature-wallpapers" element={<Home />} />
-                <Route path="/cars-wallpapers" element={<Home />} />
-                <Route path="/cyberpunk-wallpapers" element={<Home />} />
-                <Route path="/space-wallpapers" element={<Home />} />
-                <Route path="/technology-wallpapers" element={<Home />} />
-                <Route path="/architecture-wallpapers" element={<Home />} />
-                <Route path="/mountains-wallpapers" element={<Home />} />
-                <Route path="/ocean-wallpapers" element={<Home />} />
-                <Route path="/ai-art-wallpapers" element={<Home />} />
+                <Route path="/gaming-wallpapers" element={<Wallpapers />} />
+                <Route path="/minimalist-wallpapers" element={<Wallpapers />} />
+                <Route path="/abstract-wallpapers" element={<Wallpapers />} />
+                <Route path="/anime-wallpapers" element={<Wallpapers />} />
+                <Route path="/nature-wallpapers" element={<Wallpapers />} />
+                <Route path="/cars-wallpapers" element={<Wallpapers />} />
+                <Route path="/cyberpunk-wallpapers" element={<Wallpapers />} />
+                <Route path="/space-wallpapers" element={<Wallpapers />} />
+                <Route path="/technology-wallpapers" element={<Wallpapers />} />
+                <Route path="/architecture-wallpapers" element={<Wallpapers />} />
+                <Route path="/mountains-wallpapers" element={<Wallpapers />} />
+                <Route path="/ocean-wallpapers" element={<Wallpapers />} />
+                <Route path="/ai-art-wallpapers" element={<Wallpapers />} />
 
                 {/* Wallpaper Detail */}
                 <Route path="/wallpaper/:id" element={<Detail />} />
@@ -103,7 +113,7 @@ function App() {
                 </div>
 
                 <div className="text-xs text-text-secondary/80 font-normal">
-                  Aurora Wallpapers &copy; 2026
+                  Aurora &copy; 2026
                 </div>
 
                 <div className="w-10 h-0.5 bg-gradient-to-r from-accent-theme to-[#a890ff] rounded-full scale-x-75 opacity-20 group-hover/footer:scale-x-150 group-hover/footer:opacity-100 group-hover/footer:shadow-[0_0_10px_rgba(124,92,255,0.8)] transition-all duration-500" />

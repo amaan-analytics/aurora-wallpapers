@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getUserFavorites, getUserDownloads, updateUserProfile } from '../services/db';
-import { WallpaperGrid } from '../components/WallpaperGrid';
+import { DiscoveryGrid } from '../components/DiscoveryGrid';
 import { SEO } from '../components/SEO';
 
 export function Profile() {
@@ -47,26 +47,34 @@ export function Profile() {
       const favList = await getUserFavorites(currentUserId);
       const downloadList = await getUserDownloads(currentUserId);
 
-      // Map databases favorites/downloads object keys to match standard pexels photos object keys
+      // Map databases favorites/downloads object keys to match standardized discovery card format
       const formattedFavs = favList.map(item => ({
         id: item.wallpaperId,
-        width: item.width,
-        height: item.height,
+        type: item.type || 'wallpaper',
+        width: item.width || 1280,
+        height: item.height || 720,
         avg_color: item.avgColor || '#15151a',
-        photographer: item.photographer,
-        photographer_url: item.photographerUrl,
+        photographer: item.photographer || 'Artist',
+        photographer_url: item.photographerUrl || 'https://aurora.com',
         src: item.src,
-        category: item.category
+        preview_url: item.imageUrl,
+        video_url: item.src?.original || '',
+        gif_url: item.src?.original || '',
+        category: item.category || 'General'
       }));
 
       const formattedDownloads = downloadList.map(item => ({
         id: item.wallpaperId,
-        width: item.width,
-        height: item.height,
+        type: item.type || 'wallpaper',
+        width: item.width || 1280,
+        height: item.height || 720,
         avg_color: item.avgColor || '#15151a',
-        photographer: item.photographer,
-        photographer_url: item.photographerUrl,
+        photographer: item.photographer || 'Artist',
+        photographer_url: item.photographerUrl || 'https://aurora.com',
         src: item.src,
+        preview_url: item.imageUrl,
+        video_url: item.src?.original || '',
+        gif_url: item.src?.original || '',
         category: item.category || 'General'
       }));
 
@@ -114,7 +122,7 @@ export function Profile() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 pt-8 pb-28 md:pb-8 space-y-10">
-      <SEO title="My Profile" description="Manage your Aurora Wallpapers account and view saved designs." />
+      <SEO title="My Profile" description="Manage your Aurora account and view saved media designs." />
 
       {/* User Information Header Card */}
       <section className="glass-card rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 border border-border-theme/40 relative overflow-hidden">
@@ -267,8 +275,8 @@ export function Profile() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <WallpaperGrid 
-                    wallpapers={favorites} 
+                  <DiscoveryGrid 
+                    items={favorites} 
                     loading={false} 
                     hasMore={false} 
                     onFavoriteChange={loadUserData} 
@@ -282,8 +290,8 @@ export function Profile() {
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.25 }}
                 >
-                  <WallpaperGrid 
-                    wallpapers={downloads} 
+                  <DiscoveryGrid 
+                    items={downloads} 
                     loading={false} 
                     hasMore={false} 
                     onFavoriteChange={loadUserData} 

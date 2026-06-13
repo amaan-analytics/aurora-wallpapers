@@ -36,15 +36,15 @@ export function MobileBottomNav() {
         <span className="text-[9px] font-bold">Home</span>
       </Link>
 
-      {/* Search Focus Helper */}
+      {/* Explore / Search */}
       <Link 
-        to="/?focus=search" 
+        to="/explore" 
         className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-          location.search.includes('focus=search') ? 'text-accent-theme scale-105' : 'text-text-secondary hover:text-text-primary'
+          path === '/explore' ? 'text-accent-theme scale-105' : 'text-text-secondary hover:text-text-primary'
         }`}
       >
         <Search className="w-5 h-5" />
-        <span className="text-[9px] font-bold">Search</span>
+        <span className="text-[9px] font-bold">Explore</span>
       </Link>
 
       {/* Favorites Tab */}

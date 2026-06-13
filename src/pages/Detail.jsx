@@ -177,7 +177,7 @@ export function Detail() {
   const shareWallpaper = async () => {
     const shareData = {
       title: `Wallpaper by ${wallpaper.photographer} | Aurora`,
-      text: `Check out this gorgeous 4K wallpaper on Aurora Wallpapers!`,
+       text: `Check out this gorgeous 4K wallpaper on Aurora!`,
       url: window.location.href
     };
 
