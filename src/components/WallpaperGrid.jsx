@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { WallpaperCard } from './WallpaperCard';
 import { WallpaperSkeleton } from './LoadingSkeleton';
 
@@ -30,11 +30,10 @@ function useColumnCount() {
   const getCount = () => {
     if (typeof window === 'undefined') return 3;
     const w = window.innerWidth;
-    if (w < 480) return 2;      // Small phones
-    if (w < 640) return 3;      // Large phones
-    if (w < 1024) return 4;     // Tablets
-    if (w < 1280) return 5;     // Small desktop
-    return 6;                   // Large desktop
+    if (w < 640) return 1;      // Mobile: 1 card per row
+    if (w < 1024) return 2;     // Tablet: 2 cards per row
+    if (w < 1440) return 3;     // Small/Medium Desktop: 3 cards per row
+    return 4;                   // Large Desktop: 4 cards per row maximum
   };
 
   const [count, setCount] = useState(getCount);
@@ -52,8 +51,35 @@ export function WallpaperGrid({ wallpapers, loading, hasMore, onLoadMore, onFavo
   const loaderRef = useRef(null);
   const numCols = useColumnCount();
 
-  // Stable column distribution — only recompute when wallpapers or column count changes
-  const columns = distributeIntoColumns(wallpapers, numCols);
+  // Track failed media IDs locally to immediately collapse and reflow the layout on error
+  const [failedIds, setFailedIds] = useState(new Set());
+
+  // Reset failed IDs when source wallpapers change (e.g. search query change)
+  useEffect(() => {
+    setFailedIds(new Set());
+  }, [wallpapers]);
+
+  const handleLoadError = (wpId) => {
+    setFailedIds(prev => {
+      const next = new Set(prev);
+      next.add(wpId);
+      return next;
+    });
+  };
+
+  // Filter out duplicates and failed loads
+  const activeWallpapers = wallpapers.filter(w => w && w.id && !failedIds.has(w.id));
+  const uniqueWallpapers = [];
+  const seenIds = new Set();
+
+  for (const wp of activeWallpapers) {
+    if (!seenIds.has(wp.id)) {
+      seenIds.add(wp.id);
+      uniqueWallpapers.push(wp);
+    }
+  }
+
+  const columns = distributeIntoColumns(uniqueWallpapers, numCols);
 
   useEffect(() => {
     if (!loaderRef.current || !onLoadMore || loading || !hasMore) return;
@@ -71,7 +97,7 @@ export function WallpaperGrid({ wallpapers, loading, hasMore, onLoadMore, onFavo
     return () => observer.disconnect();
   }, [onLoadMore, loading, hasMore]);
 
-  if (wallpapers.length === 0 && !loading) {
+  if (uniqueWallpapers.length === 0 && !loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
         <h3 className="text-xl font-bold text-text-primary mb-2">No wallpapers found</h3>
@@ -86,19 +112,20 @@ export function WallpaperGrid({ wallpapers, loading, hasMore, onLoadMore, onFavo
     <div className="w-full max-w-7xl mx-auto px-4 py-4">
       {/* JS-driven masonry: fixed columns, items appended to shortest column */}
       <div
-        className="flex gap-3 sm:gap-4 md:gap-5 w-full items-start"
+        className="flex gap-4 sm:gap-5 md:gap-6 w-full items-start"
         style={{ alignItems: 'flex-start' }}
       >
         {columns.map((colWallpapers, colIdx) => (
           <div
             key={colIdx}
-            className="flex flex-col gap-3 sm:gap-4 md:gap-5 flex-1 min-w-0"
+            className="flex flex-col gap-4 sm:gap-5 md:gap-6 flex-1 min-w-0"
           >
             {colWallpapers.map((wallpaper) => (
               <WallpaperCard
                 key={wallpaper.id}
                 wallpaper={wallpaper}
                 onFavoriteChange={onFavoriteChange}
+                onLoadError={handleLoadError}
               />
             ))}
           </div>

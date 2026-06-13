@@ -20,6 +20,7 @@ import { GIFs } from './pages/GIFs';
 import { Explore } from './pages/Explore';
 import { Detail } from './pages/Detail';
 import { VideoDetail } from './pages/VideoDetail';
+import { ImageDetail } from './pages/ImageDetail';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Profile } from './pages/Profile';
@@ -67,6 +68,9 @@ function App() {
                 
                 {/* Video Detail */}
                 <Route path="/video/:id" element={<VideoDetail />} />
+
+                {/* Image Detail */}
+                <Route path="/image/:id" element={<ImageDetail />} />
 
                 {/* Auth Pages */}
                 <Route path="/login" element={<Login />} />

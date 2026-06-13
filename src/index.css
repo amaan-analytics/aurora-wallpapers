@@ -139,3 +139,14 @@ h1, h2, h3, h4, h5, h6 {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Shimmer animation for loading skeletons */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+/* Lazy-load fade-in for images */
+img {
+  transition: opacity 0.4s ease, transform 0.6s ease, filter 0.4s ease;
+}

@@ -39,7 +39,10 @@ export function Videos() {
     try {
       const targetQuery = searchQuery || activeCategory;
       const res = await getVideos(targetQuery, pageNum, 16);
-      const newItems = res.items || [];
+      // Only keep videos that have both a playable URL and a thumbnail
+      const newItems = (res.items || []).filter(
+        v => v && v.id && v.video_url && v.preview_url
+      );
 
       setVideos(prev => {
         if (isReset) return newItems;

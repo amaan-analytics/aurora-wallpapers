@@ -58,6 +58,19 @@ const isSafePhotographer = (name) => {
 // 1. IMAGES (Unsplash + Pexels)
 // ----------------------------------------------------
 
+let imagesPageOffset = null;
+
+export const resetImagesPageOffset = () => {
+  imagesPageOffset = Math.floor(Math.random() * 10);
+};
+
+const getImagesPageOffset = () => {
+  if (imagesPageOffset === null) {
+    imagesPageOffset = Math.floor(Math.random() * 10);
+  }
+  return imagesPageOffset;
+};
+
 export const getImages = async (queryText = '', page = 1, perPage = 16) => {
   if (isPixabayMock) {
     // Return high quality mock images from Pixabay mock
@@ -106,7 +119,13 @@ export const getImages = async (queryText = '', page = 1, perPage = 16) => {
 
   // Real Mode - fetch from Pixabay
   try {
-    const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${page}&per_page=${perPage}&image_type=photo&safesearch=true`;
+    let targetPage = page;
+    let extraParams = '';
+    if (!queryText) {
+      extraParams = '&editors_choice=true';
+      targetPage = page + getImagesPageOffset();
+    }
+    const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${targetPage}&per_page=${perPage}&image_type=photo&safesearch=true${extraParams}`;
     
     const res = await fetch(pixabayUrl);
     if (!res.ok) throw new Error("Pixabay API Error");
@@ -444,6 +463,48 @@ export const getExploreContent = async (queryText = '', page = 1, perPage = 16) 
     console.error("Discovery API Error in Explore:", error);
     return { items: [], page, per_page: perPage, total_results: 0, next_page: null };
   }
+};
+
+export const getImageById = async (id) => {
+  if (isPixabayMock || id.startsWith('mock_img_')) {
+    const baseId = id.split('_').slice(0, 3).join('_');
+    return MOCK_IMAGES_LIST.find(img => img.id === baseId) || MOCK_IMAGES_LIST[0];
+  }
+
+  if (id.startsWith('pixabay_img_')) {
+    const rawId = id.replace('pixabay_img_', '');
+    try {
+      const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&id=${rawId}`;
+      const res = await fetch(pixabayUrl);
+      if (!res.ok) throw new Error("Pixabay API Error");
+      const data = await res.json();
+      const item = data.hits?.[0];
+      if (!item) return null;
+      return {
+        id: `pixabay_img_${item.id}`,
+        type: 'image',
+        width: item.imageWidth,
+        height: item.imageHeight,
+        avg_color: '#15151a',
+        photographer: item.user || 'Pixabay Creator',
+        photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
+        src: {
+          original: item.largeImageURL,
+          large2x: item.largeImageURL,
+          large: item.largeImageURL,
+          medium: item.webformatURL,
+          small: item.previewURL
+        },
+        title: item.tags || 'Creative Image',
+        downloadUrl: item.largeImageURL
+      };
+    } catch (error) {
+      console.error("getImageById error:", error);
+      return null;
+    }
+  }
+
+  return MOCK_IMAGES_LIST.find(img => img.id === id) || MOCK_IMAGES_LIST[0];
 };
 
 export const getVideoById = async (id) => {

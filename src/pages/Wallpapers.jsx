@@ -103,10 +103,12 @@ export function Wallpapers() {
         response = await getCuratedWallpapers(targetPage, 16, true);
       }
 
-      const newPhotos = (response.photos || []).map(photo => ({
-        ...photo,
-        type: 'wallpaper' // explicitly tag as wallpaper
-      }));
+      const newPhotos = (response.photos || [])
+        .filter(photo => photo && photo.id && photo.src?.large2x)
+        .map(photo => ({
+          ...photo,
+          type: 'wallpaper'
+        }));
       
       setWallpapers(prev => {
         if (isReset) return newPhotos;

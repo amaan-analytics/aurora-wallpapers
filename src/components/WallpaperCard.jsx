@@ -5,12 +5,15 @@ import { Heart, Download, ExternalLink, Image as ImageIcon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites, addDownload } from '../services/db';
 
-export function WallpaperCard({ wallpaper, onFavoriteChange }) {
+export function WallpaperCard({ wallpaper, onFavoriteChange, onLoadError }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+
+  // Return null immediately if wallpaper is missing required source URLs
+  if (!wallpaper || !wallpaper.id || !wallpaper.src || !wallpaper.src.large2x) return null;
 
   useEffect(() => {
     const checkFav = async () => {
@@ -84,15 +87,21 @@ export function WallpaperCard({ wallpaper, onFavoriteChange }) {
       className="relative break-inside-avoid overflow-hidden rounded-2xl group border border-border-theme/40 bg-card-theme hover:border-accent-theme/30 accent-glow-hover duration-300 cursor-pointer"
       onClick={handleCardClick}
     >
-      <div className="relative overflow-hidden w-full bg-surface-theme">
+      <div
+        className="relative overflow-hidden w-full bg-surface-theme"
+        style={{ aspectRatio: wallpaper.width && wallpaper.height ? `${wallpaper.width} / ${wallpaper.height}` : '4/3' }}
+      >
         <img
-            src={wallpaper.src.large2x}
-          alt={`${wallpaper.category || "4K"} Wallpaper by ${wallpaper.photographer}`}
+          src={wallpaper.src.large2x}
+          alt={`${wallpaper.category || '4K'} Wallpaper by ${wallpaper.photographer}`}
           onLoad={() => setImageLoaded(true)}
-          className={`w-full h-auto object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
+          onError={() => {
+            console.warn(`WallpaperCard image failed: ${wallpaper.id}`);
+            if (onLoadError) onLoadError(wallpaper.id);
+          }}
+          className={`w-full h-full object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
             imageLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
           }`}
-          style={{ minHeight: '150px' }}
         />
 
         {/* Color placeholder while loading */}

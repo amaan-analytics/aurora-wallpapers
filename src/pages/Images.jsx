@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Sparkles, Search } from 'lucide-react';
-import { getImages } from '../services/api';
+import { getImages, resetImagesPageOffset } from '../services/api';
 import { DiscoveryGrid } from '../components/DiscoveryGrid';
 import { SEO } from '../components/SEO';
 
@@ -26,6 +26,7 @@ export function Images() {
   }, [searchQuery]);
 
   useEffect(() => {
+    resetImagesPageOffset();
     setPage(1);
     setImages([]);
     setHasMore(true);
@@ -39,7 +40,10 @@ export function Images() {
     try {
       const targetQuery = searchQuery || activeCategory;
       const res = await getImages(targetQuery, pageNum, 16);
-      const newItems = res.items || [];
+      // Only keep images that have a valid source URL
+      const newItems = (res.items || []).filter(
+        img => img && img.id && (img.preview_url || img.src?.large2x)
+      );
 
       setImages(prev => {
         if (isReset) return newItems;

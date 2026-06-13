@@ -22,7 +22,7 @@ export function Home() {
     const loadPreviews = async () => {
       setLoading(true);
       try {
-        const randomPage = () => Math.floor(Math.random() * 10) + 1; // Limit random to 10 to ensure results
+        const randomPage = () => Math.floor(Math.random() * 10) + 1;
         const [wallRes, imgRes, vidRes, gifRes] = await Promise.all([
           getCuratedWallpapers(randomPage(), 12, true),
           getImages('', randomPage(), 12),
@@ -30,10 +30,27 @@ export function Home() {
           getGIFs('', 'Trending', randomPage(), 12)
         ]);
 
-        setWallpapers((wallRes.photos || []).slice(0, 12).map(p => ({ ...p, type: 'wallpaper' })));
-        setImages((imgRes.items || []).slice(0, 12));
-        setVideos((vidRes.items || []).slice(0, 12));
-        setGifs((gifRes.items || []).slice(0, 12));
+        setWallpapers(
+          (wallRes.photos || [])
+            .filter(p => p && p.id && p.src?.large2x)
+            .slice(0, 12)
+            .map(p => ({ ...p, type: 'wallpaper' }))
+        );
+        setImages(
+          (imgRes.items || [])
+            .filter(img => img && img.id && (img.preview_url || img.src?.large2x))
+            .slice(0, 12)
+        );
+        setVideos(
+          (vidRes.items || [])
+            .filter(v => v && v.id && v.video_url && v.preview_url)
+            .slice(0, 12)
+        );
+        setGifs(
+          (gifRes.items || [])
+            .filter(g => g && g.id && g.gif_url)
+            .slice(0, 12)
+        );
       } catch (err) {
         console.warn("Failed to load dashboard previews:", err);
       } finally {

@@ -5,7 +5,7 @@ import { Heart, Download, Share2, Check, ExternalLink, Play, Eye } from 'lucide-
 import { useAuth } from '../context/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites, addDownload } from '../services/db';
 
-export function DiscoveryCard({ item, onFavoriteChange }) {
+export function DiscoveryCard({ item, onFavoriteChange, onLoadError }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
@@ -15,7 +15,12 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
   const [isHovered, setIsHovered] = useState(false);
   
   const videoRef = useRef(null);
-  const isVideo = item.type === 'video';
+  const isVideo = item?.type === 'video';
+
+  // Return null immediately if item is missing required URLs
+  if (!item || !item.id) return null;
+  if (isVideo && (!item.video_url || !item.preview_url)) return null;
+  if (!isVideo && !item.preview_url && !item.src?.large2x && !item.gif_url) return null;
 
   useEffect(() => {
     const checkFav = async () => {
@@ -31,11 +36,12 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
   }, [user, item.id]);
 
   const handleCardClick = () => {
-    // Wallpapers have a detailed route; other items open full-res download/media file in lightbox or copy share
     if (item.type === 'wallpaper') {
       navigate(`/wallpaper/${item.id}`);
     } else if (item.type === 'video') {
       navigate(`/video/${item.id}`, { state: { video: item } });
+    } else if (item.type === 'image') {
+      navigate(`/image/${item.id}`, { state: { image: item } });
     } else {
       // Open direct media link in a new tab
       window.open(item.src?.original || item.video_url || item.gif_url, '_blank');
@@ -116,20 +122,27 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleHoverEnd}
     >
-      <div className="relative overflow-hidden w-full bg-surface-theme">
+      <div 
+        className="relative overflow-hidden w-full bg-surface-theme"
+        style={{ aspectRatio: item.width && item.height ? `${item.width} / ${item.height}` : isVideo ? '16/9' : '1.5' }}
+      >
         
         {/* Render Video Preview */}
         {isVideo ? (
-          <div className="relative w-full h-auto min-h-[150px] aspect-video">
+          <div className="relative w-full h-full">
             <img
               src={item.preview_url}
               alt={item.title}
               onLoad={() => setMediaLoaded(true)}
+              onError={() => {
+                console.warn(`DiscoveryCard video thumbnail failed: ${item.id}`);
+                if (onLoadError) onLoadError(item.id);
+              }}
               className={`w-full h-full object-cover transition-all duration-300 ${
                 mediaLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
               }`}
             />
-            {isHovered && (
+            {isHovered && item.video_url && (
               <video
                 ref={videoRef}
                 src={item.video_url}
@@ -137,6 +150,10 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
                 muted
                 loop
                 playsInline
+                onError={() => {
+                  console.warn(`DiscoveryCard video playback failed: ${item.id}`);
+                  if (onLoadError) onLoadError(item.id);
+                }}
                 className="absolute inset-0 w-full h-full object-cover z-10"
               />
             )}
@@ -151,10 +168,13 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
             src={item.preview_url || item.src?.large2x || item.gif_url}
             alt={item.title}
             onLoad={() => setMediaLoaded(true)}
-            className={`w-full h-auto object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
+            onError={() => {
+              console.warn(`DiscoveryCard image failed to load: ${item.id}`);
+              if (onLoadError) onLoadError(item.id);
+            }}
+            className={`w-full h-full object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
               mediaLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
             }`}
-            style={{ minHeight: '150px' }}
           />
         )}
 
