@@ -19,6 +19,7 @@ import { Videos } from './pages/Videos';
 import { GIFs } from './pages/GIFs';
 import { Explore } from './pages/Explore';
 import { Detail } from './pages/Detail';
+import { VideoDetail } from './pages/VideoDetail';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Profile } from './pages/Profile';
@@ -63,6 +64,9 @@ function App() {
 
                 {/* Wallpaper Detail */}
                 <Route path="/wallpaper/:id" element={<Detail />} />
+                
+                {/* Video Detail */}
+                <Route path="/video/:id" element={<VideoDetail />} />
 
                 {/* Auth Pages */}
                 <Route path="/login" element={<Login />} />

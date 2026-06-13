@@ -12,6 +12,7 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
   const [mediaLoaded, setMediaLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   
   const videoRef = useRef(null);
   const isVideo = item.type === 'video';
@@ -33,6 +34,8 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
     // Wallpapers have a detailed route; other items open full-res download/media file in lightbox or copy share
     if (item.type === 'wallpaper') {
       navigate(`/wallpaper/${item.id}`);
+    } else if (item.type === 'video') {
+      navigate(`/video/${item.id}`, { state: { video: item } });
     } else {
       // Open direct media link in a new tab
       window.open(item.src?.original || item.video_url || item.gif_url, '_blank');
@@ -94,16 +97,11 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
   };
 
   const handleHoverStart = () => {
-    if (isVideo && videoRef.current) {
-      videoRef.current.play().catch(err => console.log("Muted autoplay blocked:", err));
-    }
+    setIsHovered(true);
   };
 
   const handleHoverEnd = () => {
-    if (isVideo && videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.currentTime = 0;
-    }
+    setIsHovered(false);
   };
 
   return (
@@ -123,19 +121,27 @@ export function DiscoveryCard({ item, onFavoriteChange }) {
         {/* Render Video Preview */}
         {isVideo ? (
           <div className="relative w-full h-auto min-h-[150px] aspect-video">
-            <video
-              ref={videoRef}
-              src={item.video_url}
-              poster={item.preview_url}
-              muted
-              loop
-              playsInline
-              preload="none"
-              onLoadedData={() => setMediaLoaded(true)}
-              className="w-full h-full object-cover transition-opacity duration-300"
+            <img
+              src={item.preview_url}
+              alt={item.title}
+              onLoad={() => setMediaLoaded(true)}
+              className={`w-full h-full object-cover transition-all duration-300 ${
+                mediaLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
+              }`}
             />
+            {isHovered && (
+              <video
+                ref={videoRef}
+                src={item.video_url}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover z-10"
+              />
+            )}
             {/* Play indicator badge */}
-            <div className="absolute bottom-3 right-3 p-1.5 rounded-lg bg-black/50 border border-white/10 text-white group-hover:scale-90 transition-transform">
+            <div className="absolute bottom-3 right-3 p-1.5 rounded-lg bg-black/50 border border-white/10 text-white group-hover:scale-90 transition-transform z-20">
               <Play className="w-3.5 h-3.5 fill-current" />
             </div>
           </div>

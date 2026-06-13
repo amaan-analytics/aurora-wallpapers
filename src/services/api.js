@@ -25,13 +25,42 @@ const shuffleArray = (arr) => {
   return a;
 };
 
+// NSFW Blocklist for robust content safety
+const NSFW_BLOCKLIST = [
+  'adult', 'nude', 'nsfw', 'sexual', 'lingerie', 'bikini', 'explicit', 
+  'porn', 'erotic', 'sexy', 'boobs', 'naked', 'girl', 'woman', 'model', 
+  'sensual', 'butt', 'ass', 'thong', 'panties', 'underwear', 'swimsuit', 
+  'cleavage', 'breast', 'hot', 'babe', 'seductive', 'glamour', 'boudoir',
+  'lady', 'female', 'male', 'man', 'guy', 'people', 'human', 'couple',
+  'romance', 'relationship', 'hug', 'kiss', 'legs', 'waist', 'lips',
+  'dance', 'dancing', 'fitness', 'workout', 'strip', 'show', 'exotic',
+  'bed', 'bedroom', 'shower', 'bath', 'towel', 'swimwear', 'bra',
+  'beauty', 'makeup', 'glam', 'boob', 'tits', 'breastfeeding', 'nackt',
+  'sensuelle', 'madchen', 'frauen', 'femme', 'chica', 'chicas', 'hottie',
+  'flesh', 'penis', 'vagina', 'vulva'
+];
+
+const isSafeContent = (text) => {
+  if (!text) return true;
+  // Split into clean alphanumeric words to prevent false positive matching on substrings (like "germany" matching "man")
+  const words = text.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/);
+  return !words.some(word => NSFW_BLOCKLIST.includes(word));
+};
+
+const isSafePhotographer = (name) => {
+  if (!name) return true;
+  const words = name.toLowerCase().replace(/[^a-z0-9]/g, ' ').split(/\s+/);
+  const STRICT_NSFW = ['adult', 'nude', 'nsfw', 'sexual', 'porn', 'erotic', 'sexy', 'naked', 'boobs', 'butt', 'ass', 'sex'];
+  return !words.some(word => STRICT_NSFW.includes(word));
+};
+
 // ----------------------------------------------------
 // 1. IMAGES (Unsplash + Pexels)
 // ----------------------------------------------------
 
 export const getImages = async (queryText = '', page = 1, perPage = 16) => {
-  if (isUnsplashMock && isPexelsMock) {
-    // Return high quality mock images from unsplash (static URLs)
+  if (isPixabayMock) {
+    // Return high quality mock images from Pixabay mock
     const cacheKey = `images_${queryText.toLowerCase() || 'curated'}`;
     if (page === 1) delete mockSessionCache[cacheKey];
 
@@ -53,100 +82,63 @@ export const getImages = async (queryText = '', page = 1, perPage = 16) => {
     }
 
     const startIndex = (page - 1) * perPage;
+    
+    // Seed extra mock items for infinite scroll simulation if we hit end
+    if (startIndex >= list.length && list.length > 0) {
+      const neededLoops = Math.ceil((startIndex + perPage) / list.length);
+      let expandedList = [];
+      for(let i = 0; i < neededLoops; i++) {
+        expandedList.push(...list.map(item => ({...item, id: item.id + "_" + i})));
+      }
+      list = expandedList;
+    }
+
     const paginated = list.slice(startIndex, startIndex + perPage);
 
     return {
       items: paginated,
       page,
       per_page: perPage,
-      total_results: list.length,
-      next_page: startIndex + perPage < list.length ? page + 1 : null
+      total_results: list.length * 10, // Simulated total
+      next_page: page + 1
     };
   }
 
-  // Real Mode - fetch from Pexels & Unsplash concurrently
+  // Real Mode - fetch from Pixabay
   try {
-    const promises = [];
+    const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${page}&per_page=${perPage}&image_type=photo&safesearch=true`;
     
-    // Unsplash call
-    if (!isUnsplashMock) {
-      const unsplashUrl = queryText 
-        ? `https://api.unsplash.com/search/photos?query=${encodeURIComponent(queryText)}&page=${page}&per_page=${Math.ceil(perPage / 2)}`
-        : `https://api.unsplash.com/photos?page=${page}&per_page=${Math.ceil(perPage / 2)}`;
-      
-      promises.push(
-        fetch(unsplashUrl, { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } })
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (!data) return [];
-            const rawItems = queryText ? (data.results || []) : data;
-            return rawItems.map(item => ({
-              id: `unsplash_${item.id}`,
-              type: 'image',
-              width: item.width,
-              height: item.height,
-              avg_color: item.color || '#15151a',
-              photographer: item.user?.name || 'Unsplash Artist',
-              photographer_url: item.user?.portfolio_url || 'https://unsplash.com',
-              src: {
-                original: item.urls?.raw,
-                large2x: item.urls?.regular,
-                large: item.urls?.regular,
-                medium: item.urls?.small,
-                small: item.urls?.small
-              },
-              title: item.alt_description || item.description || 'Creative Image',
-              downloadUrl: item.links?.download || item.urls?.raw
-            }));
-          })
-          .catch(() => [])
-      );
-    }
-
-    // Pexels call
-    if (!isPexelsMock) {
-      const pexelsUrl = queryText
-        ? `https://api.pexels.com/v1/search?query=${encodeURIComponent(queryText)}&page=${page}&per_page=${Math.ceil(perPage / 2)}`
-        : `https://api.pexels.com/v1/curated?page=${page}&per_page=${Math.ceil(perPage / 2)}`;
-      
-      promises.push(
-        fetch(pexelsUrl, { headers: { Authorization: PEXELS_API_KEY } })
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (!data || !data.photos) return [];
-            return data.photos.map(item => ({
-              id: `pexels_${item.id}`,
-              type: 'image',
-              width: item.width,
-              height: item.height,
-              avg_color: item.avg_color || '#15151a',
-              photographer: item.photographer,
-              photographer_url: item.photographer_url,
-              src: item.src,
-              title: item.alt || 'Pexels Image',
-              downloadUrl: item.src.original
-            }));
-          })
-          .catch(() => [])
-      );
-    }
-
-    const results = await Promise.all(promises);
-    const combined = [];
-    const maxLen = Math.max(results[0]?.length || 0, results[1]?.length || 0);
+    const res = await fetch(pixabayUrl);
+    if (!res.ok) throw new Error("Pixabay API Error");
     
-    // Interleave Pexels and Unsplash results for balanced variety
-    for (let i = 0; i < maxLen; i++) {
-      if (results[0] && results[0][i]) combined.push(results[0][i]);
-      if (results[1] && results[1][i]) combined.push(results[1][i]);
-    }
+    const data = await res.json();
+    const items = (data.hits || [])
+      .filter(item => isSafeContent(item.tags) && isSafeContent(item.user))
+      .map(item => ({
+        id: `pixabay_img_${item.id}`,
+        type: 'image',
+        width: item.imageWidth,
+        height: item.imageHeight,
+        avg_color: '#15151a',
+        photographer: item.user || 'Pixabay Creator',
+        photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
+        src: {
+          original: item.largeImageURL,
+          large2x: item.largeImageURL,
+          large: item.largeImageURL,
+          medium: item.webformatURL,
+          small: item.previewURL
+        },
+        title: item.tags || 'Creative Image',
+        downloadUrl: item.largeImageURL
+      }));
 
     return {
-      items: combined,
+      items,
       page,
       per_page: perPage,
-      total_results: combined.length * 5, // Simulated total
-      next_page: combined.length >= Math.floor(perPage / 2) ? page + 1 : null
+      total_results: data.totalHits || items.length * 5,
+      next_page: items.length >= perPage ? page + 1 : null
     };
   } catch (error) {
     console.error("Discovery API Error getting images:", error);
@@ -181,14 +173,25 @@ export const getVideos = async (queryText = '', page = 1, perPage = 16) => {
     }
 
     const startIndex = (page - 1) * perPage;
+    
+    // Seed extra mock items for infinite scroll simulation
+    if (startIndex >= list.length && list.length > 0) {
+      const neededLoops = Math.ceil((startIndex + perPage) / list.length);
+      let expandedList = [];
+      for(let i = 0; i < neededLoops; i++) {
+        expandedList.push(...list.map(item => ({...item, id: item.id + "_" + i})));
+      }
+      list = expandedList;
+    }
+
     const paginated = list.slice(startIndex, startIndex + perPage);
 
     return {
       items: paginated,
       page,
       per_page: perPage,
-      total_results: list.length,
-      next_page: startIndex + perPage < list.length ? page + 1 : null
+      total_results: list.length * 10,
+      next_page: page + 1
     };
   }
 
@@ -207,7 +210,9 @@ export const getVideos = async (queryText = '', page = 1, perPage = 16) => {
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (!data || !data.videos) return [];
-            return data.videos.map(item => {
+            return data.videos
+              .filter(item => isSafeContent(item.url) && isSafePhotographer(item.user?.name))
+              .map(item => {
               // Find best MP4 video quality link
               const hdFile = item.video_files?.find(f => f.quality === 'hd' && f.file_type === 'video/mp4') || 
                             item.video_files?.find(f => f.file_type === 'video/mp4') ||
@@ -218,7 +223,7 @@ export const getVideos = async (queryText = '', page = 1, perPage = 16) => {
                 width: item.width || 1280,
                 height: item.height || 720,
                 avg_color: '#15151a',
-                preview_url: item.video_pictures?.[0]?.link || '',
+                preview_url: item.image || item.video_pictures?.[0]?.link || item.video_pictures?.[0]?.picture || '',
                 video_url: hdFile?.link || '',
                 photographer: item.user?.name || 'Pexels Videographer',
                 photographer_url: item.user?.url || 'https://pexels.com',
@@ -232,20 +237,32 @@ export const getVideos = async (queryText = '', page = 1, perPage = 16) => {
 
     // Pixabay Video call
     if (!isPixabayMock) {
-      const pixabayUrl = `https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${page}&per_page=${Math.ceil(perPage / 2)}`;
+      const pixabayUrl = queryText
+        ? `https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${page}&per_page=${Math.ceil(perPage / 2)}&safesearch=true`
+        : `https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&page=${page}&per_page=${Math.ceil(perPage / 2)}&safesearch=true`;
       
       promises.push(
         fetch(pixabayUrl)
           .then(res => res.ok ? res.json() : null)
           .then(data => {
             if (!data || !data.hits) return [];
-            return data.hits.map(item => {
+            return data.hits
+              .filter(item => isSafeContent(item.tags) && isSafePhotographer(item.user))
+              .map(item => {
               // Map videos
               const videos = item.videos || {};
               const bestVideo = videos.medium || videos.small || videos.large || videos.tiny;
               
               // Generate cover image
-              const preview = `https://i.vimeocdn.com/video/${item.picture_id}_640x360.jpg`;
+              let preview = '';
+              if (item.picture_id) {
+                preview = `https://i.vimeocdn.com/video/${item.picture_id}_640x360.jpg`;
+              } else if (item.thumbnail) {
+                preview = item.thumbnail;
+              } else if (item.videos?.tiny?.thumbnail) {
+                preview = item.videos.tiny.thumbnail;
+              }
+
               return {
                 id: `pixabay_video_${item.id}`,
                 type: 'video',
@@ -314,14 +331,25 @@ export const getGIFs = async (queryText = '', category = 'Trending', page = 1, p
     }
 
     const startIndex = (page - 1) * perPage;
+    
+    // Seed extra mock items for infinite scroll simulation
+    if (startIndex >= list.length && list.length > 0) {
+      const neededLoops = Math.ceil((startIndex + perPage) / list.length);
+      let expandedList = [];
+      for(let i = 0; i < neededLoops; i++) {
+        expandedList.push(...list.map(item => ({...item, id: item.id + "_" + i})));
+      }
+      list = expandedList;
+    }
+
     const paginated = list.slice(startIndex, startIndex + perPage);
 
     return {
       items: paginated,
       page,
       per_page: perPage,
-      total_results: list.length,
-      next_page: startIndex + perPage < list.length ? page + 1 : null
+      total_results: list.length * 10,
+      next_page: page + 1
     };
   }
 
@@ -375,11 +403,11 @@ export const getExploreContent = async (queryText = '', page = 1, perPage = 16) 
     const limitPerSource = Math.max(4, Math.ceil(perPage / 4));
     
     const promises = [
-      // 1. Wallpapers (Simulated from images)
-      getImages(queryText, page, limitPerSource).then(res => 
-        res.items.map(img => ({ ...img, type: 'wallpaper', category: img.category || 'Wallpapers' }))
+      // 1. Wallpapers (Pexels)
+      import('./pexels').then(m => m.searchWallpapers(queryText, page, limitPerSource, '', true)).then(res => 
+        (res.photos || []).map(img => ({ ...img, type: 'wallpaper', category: img.category || 'Wallpapers' }))
       ),
-      // 2. Images
+      // 2. Images (Pixabay)
       getImages(queryText, page, limitPerSource).then(res => 
         res.items.map(img => ({ ...img, type: 'image' }))
       ),
@@ -416,6 +444,73 @@ export const getExploreContent = async (queryText = '', page = 1, perPage = 16) 
     console.error("Discovery API Error in Explore:", error);
     return { items: [], page, per_page: perPage, total_results: 0, next_page: null };
   }
+};
+
+export const getVideoById = async (id) => {
+  if (id.startsWith('pexels_video_')) {
+    const rawId = id.replace('pexels_video_', '');
+    if (isPexelsMock) return MOCK_VIDEOS_LIST.find(v => v.id === id) || MOCK_VIDEOS_LIST[0];
+    
+    try {
+      const res = await fetch(`https://api.pexels.com/videos/videos/${rawId}`, { headers: { Authorization: PEXELS_API_KEY } });
+      if (!res.ok) throw new Error("Pexels fetch failed");
+      const item = await res.json();
+      
+      const hdFile = item.video_files?.find(f => f.quality === 'hd' && f.file_type === 'video/mp4') || 
+                    item.video_files?.find(f => f.file_type === 'video/mp4') ||
+                    item.video_files?.[0];
+      return {
+        id: `pexels_video_${item.id}`,
+        type: 'video',
+        width: item.width || 1280,
+        height: item.height || 720,
+        avg_color: '#15151a',
+        preview_url: item.video_pictures?.[0]?.link || '',
+        video_url: hdFile?.link || '',
+        photographer: item.user?.name || 'Pexels Videographer',
+        photographer_url: item.user?.url || 'https://pexels.com',
+        title: `Video by ${item.user?.name || 'Creator'}`
+      };
+    } catch (err) {
+      console.warn("getVideoById error:", err);
+      return null;
+    }
+  }
+  
+  if (id.startsWith('pixabay_video_')) {
+    const rawId = id.replace('pixabay_video_', '');
+    if (isPixabayMock) return MOCK_VIDEOS_LIST.find(v => v.id === id) || MOCK_VIDEOS_LIST[0];
+    
+    try {
+      const res = await fetch(`https://pixabay.com/api/videos/?key=${PIXABAY_API_KEY}&id=${rawId}`);
+      if (!res.ok) throw new Error("Pixabay fetch failed");
+      const data = await res.json();
+      const item = data.hits?.[0];
+      if (!item) return null;
+      
+      const videos = item.videos || {};
+      const bestVideo = videos.medium || videos.small || videos.large || videos.tiny;
+      const preview = `https://i.vimeocdn.com/video/${item.picture_id}_640x360.jpg`;
+      return {
+        id: `pixabay_video_${item.id}`,
+        type: 'video',
+        width: bestVideo?.width || 1280,
+        height: bestVideo?.height || 720,
+        avg_color: '#15151a',
+        preview_url: preview,
+        video_url: bestVideo?.url || '',
+        photographer: item.user || 'Pixabay Creator',
+        photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
+        title: item.tags || 'Creative Footage'
+      };
+    } catch (err) {
+      console.warn("getVideoById error:", err);
+      return null;
+    }
+  }
+  
+  // mock fallback
+  return MOCK_VIDEOS_LIST.find(v => v.id === id || id.startsWith(v.id)) || MOCK_VIDEOS_LIST[0];
 };
 
 // ----------------------------------------------------
@@ -530,6 +625,114 @@ const MOCK_IMAGES_LIST = [
     },
     title: 'Misty mountain range peaks landscape sky clouds scenic',
     category: 'Mountains'
+  },
+  {
+    id: 'mock_img_7',
+    type: 'image',
+    width: 2560,
+    height: 1600,
+    avg_color: '#1a2a3a',
+    photographer: 'Silas Baisch',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'Blue ocean water under cloudy sky during daytime',
+    category: 'Nature'
+  },
+  {
+    id: 'mock_img_8',
+    type: 'image',
+    width: 1920,
+    height: 1200,
+    avg_color: '#2c2d30',
+    photographer: 'Campbell',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'White porsche coupe on gray asphalt road',
+    category: 'Cars'
+  },
+  {
+    id: 'mock_img_9',
+    type: 'image',
+    width: 2560,
+    height: 1440,
+    avg_color: '#1e1e24',
+    photographer: 'Xavier',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'Black flat screen monitor turned on showing green leaves',
+    category: 'Gaming'
+  },
+  {
+    id: 'mock_img_10',
+    type: 'image',
+    width: 1920,
+    height: 1200,
+    avg_color: '#101018',
+    photographer: 'Sora Sagano',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'High angle view of skyscrapers in city at night',
+    category: 'Architecture'
+  },
+  {
+    id: 'mock_img_11',
+    type: 'image',
+    width: 2560,
+    height: 1440,
+    avg_color: '#0a0718',
+    photographer: 'DeepMind',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'Abstract neon wireframe lines glow',
+    category: 'Technology'
+  },
+  {
+    id: 'mock_img_12',
+    type: 'image',
+    width: 1920,
+    height: 1200,
+    avg_color: '#e8cde0',
+    photographer: 'Sora Sagano',
+    photographer_url: 'https://unsplash.com',
+    src: {
+      original: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=1920&q=100',
+      large2x: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=1200&q=80',
+      large: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=1000&q=80',
+      medium: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=600&q=80',
+      small: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?auto=format&fit=crop&w=400&q=80'
+    },
+    title: 'Pink cherry blossom flowers under white clouds',
+    category: 'Nature'
   }
 ];
 

@@ -377,6 +377,10 @@ export const getRandomWallpapers = async (perPage = 20) => {
 };
 
 export const searchWallpapers = async (queryText, page = 1, perPage = 20, orientation = '', shuffle = false) => {
+  if (!queryText) {
+    return getCuratedWallpapers(page, perPage, shuffle);
+  }
+
   if (isMockMode) {
     const normalizedQuery = queryText.toLowerCase();
     const cacheKey = `${normalizedQuery}_${shuffle ? 'shuffled' : 'stable'}`;

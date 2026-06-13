@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, ArrowRight, Image as ImageIcon, Video, Film, Smile, Search } from 'lucide-react';
 import { getImages, getVideos, getGIFs } from '../services/api';
 import { getCuratedWallpapers } from '../services/pexels';
-import { DiscoveryCard } from '../components/DiscoveryCard';
+import { DiscoveryGrid } from '../components/DiscoveryGrid';
 import { SEO } from '../components/SEO';
 
 export function Home() {
@@ -22,17 +22,18 @@ export function Home() {
     const loadPreviews = async () => {
       setLoading(true);
       try {
+        const randomPage = () => Math.floor(Math.random() * 10) + 1; // Limit random to 10 to ensure results
         const [wallRes, imgRes, vidRes, gifRes] = await Promise.all([
-          getCuratedWallpapers(1, 4),
-          getImages('', 1, 4),
-          getVideos('', 1, 4),
-          getGIFs('', 'Trending', 1, 4)
+          getCuratedWallpapers(randomPage(), 12, true),
+          getImages('', randomPage(), 12),
+          getVideos('', randomPage(), 12),
+          getGIFs('', 'Trending', randomPage(), 12)
         ]);
 
-        setWallpapers((wallRes.photos || []).slice(0, 4).map(p => ({ ...p, type: 'wallpaper' })));
-        setImages((imgRes.items || []).slice(0, 4));
-        setVideos((vidRes.items || []).slice(0, 4));
-        setGifs((gifRes.items || []).slice(0, 4));
+        setWallpapers((wallRes.photos || []).slice(0, 12).map(p => ({ ...p, type: 'wallpaper' })));
+        setImages((imgRes.items || []).slice(0, 12));
+        setVideos((vidRes.items || []).slice(0, 12));
+        setGifs((gifRes.items || []).slice(0, 12));
       } catch (err) {
         console.warn("Failed to load dashboard previews:", err);
       } finally {
@@ -61,6 +62,17 @@ export function Home() {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
   };
+
+  const renderPreviewGrid = (items, linkTo, exploreText) => (
+    <div className="relative max-h-[700px] overflow-hidden rounded-xl">
+      <DiscoveryGrid items={items} loading={loading} hasMore={false} />
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-background-theme via-background-theme/90 to-transparent flex items-end justify-center pb-6 z-10 pointer-events-none">
+        <Link to={linkTo} className="pointer-events-auto px-6 py-3 bg-surface-theme/90 hover:bg-accent-theme border border-border-theme/50 hover:border-transparent text-text-primary hover:text-white text-sm font-bold rounded-full shadow-xl backdrop-blur-md transition-all hover:scale-105 flex items-center gap-2">
+          {exploreText} <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen pb-28 md:pb-16 relative">
@@ -146,17 +158,7 @@ export function Home() {
               View All Wallpapers <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {wallpapers.map(wp => (
-                <DiscoveryCard key={wp.id} item={wp} />
-              ))}
-            </div>
-          )}
+          {renderPreviewGrid(wallpapers, '/wallpapers', 'Explore All Wallpapers')}
         </motion.section>
 
         {/* Channel 2: Images */}
@@ -170,17 +172,7 @@ export function Home() {
               View All Images <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {images.map(img => (
-                <DiscoveryCard key={img.id} item={img} />
-              ))}
-            </div>
-          )}
+          {renderPreviewGrid(images, '/images', 'Explore All Images')}
         </motion.section>
 
         {/* Channel 3: Videos */}
@@ -194,17 +186,7 @@ export function Home() {
               View All Videos <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {videos.map(vid => (
-                <DiscoveryCard key={vid.id} item={vid} />
-              ))}
-            </div>
-          )}
+          {renderPreviewGrid(videos, '/videos', 'Explore All Videos')}
         </motion.section>
 
         {/* Channel 4: GIFs */}
@@ -218,17 +200,7 @@ export function Home() {
               View All GIFs <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          {loading ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => <div key={i} className="h-48 rounded-2xl bg-card-theme/50 animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {gifs.map(gif => (
-                <DiscoveryCard key={gif.id} item={gif} />
-              ))}
-            </div>
-          )}
+          {renderPreviewGrid(gifs, '/gifs', 'Explore All GIFs')}
         </motion.section>
 
       </motion.div>
