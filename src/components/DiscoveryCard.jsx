@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites, addDownload } from '../services/db';
 
 export function DiscoveryCard({ item, onFavoriteChange, onLoadError }) {
+  const [hasError, setHasError] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isFavorited, setIsFavorited] = useState(false);
@@ -165,15 +166,36 @@ export function DiscoveryCard({ item, onFavoriteChange, onLoadError }) {
         ) : (
           /* Render Image / GIF */
           <img
-            src={item.preview_url || item.src?.large2x || item.gif_url}
+            src={
+              hasError
+                ? "https://via.placeholder.com/600x400?text=Image"
+                : item.preview_url ||
+                  item.src?.large2x ||
+                  item.src?.large ||
+                  item.src?.medium ||
+                  item.src?.small ||
+                  item.gif_url
+            }
             alt={item.title}
             onLoad={() => setMediaLoaded(true)}
-            onError={() => {
-              console.warn(`DiscoveryCard image failed to load: ${item.id}`);
-              if (onLoadError) onLoadError(item.id);
+            onError={(e) => {
+              console.warn(`Image failed: ${item.id}`);
+
+              if (!hasError) {
+                setHasError(true);
+
+                if (onLoadError) {
+                  onLoadError(item.id);
+                }
+
+                e.target.src =
+                  "https://via.placeholder.com/600x400?text=Image";
+              }
             }}
             className={`w-full h-full object-cover transform duration-700 ease-out group-hover:scale-[1.03] ${
-              mediaLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 blur-md'
+              mediaLoaded
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-95 blur-md"
             }`}
           />
         )}

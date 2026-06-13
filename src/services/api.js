@@ -144,9 +144,10 @@ export const getImages = async (queryText = '', page = 1, perPage = 16) => {
         src: {
           original: item.largeImageURL,
           large2x: item.largeImageURL,
-          large: item.largeImageURL,
+          large: item.webformatURL,
           medium: item.webformatURL,
-          small: item.previewURL
+          small: item.previewURL,
+          thumbnail: item.previewURL
         },
         title: item.tags || 'Creative Image',
         downloadUrl: item.largeImageURL
@@ -489,12 +490,13 @@ export const getImageById = async (id) => {
         photographer: item.user || 'Pixabay Creator',
         photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
         src: {
-          original: item.largeImageURL,
-          large2x: item.largeImageURL,
-          large: item.largeImageURL,
-          medium: item.webformatURL,
-          small: item.previewURL
-        },
+            original: item.largeImageURL,
+            large2x: item.largeImageURL,
+            large: item.webformatURL,
+            medium: item.webformatURL,
+            small: item.previewURL,
+            thumbnail: item.previewURL
+          },
         title: item.tags || 'Creative Image',
         downloadUrl: item.largeImageURL
       };

@@ -57,15 +57,14 @@ export function DiscoveryGrid({ items, loading, hasMore, onLoadMore, onFavoriteC
   }, [items]);
 
   const handleLoadError = (itemId) => {
-    setFailedIds(prev => {
-      const next = new Set(prev);
-      next.add(itemId);
-      return next;
-    });
+    console.warn("Media failed to load:", itemId);
+
+    // Don't remove card from grid
+    // Just log the error
   };
 
   // Filter out duplicates and failed loads
-  const activeItems = items.filter(item => item && item.id && !failedIds.has(item.id));
+  const activeItems = items.filter(item => item && item.id);
   const uniqueItems = [];
   const seenIds = new Set();
 
