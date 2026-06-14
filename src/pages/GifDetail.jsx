@@ -25,13 +25,27 @@ export default function GifDetail() {
   const [shareFeedback, setShareFeedback] = useState(false);
 
   useEffect(() => {
-    getGIFs('', 'Trending', 1, 12)
-      .then(res => {
+    const loadSimilar = async () => {
+        try {
+        const res = await getGIFs('', 'Trending', 1, 12);
+
+        console.log('GIF API Response:', res);
+
+        const items = res?.items || [];
+
+        console.log('Items:', items);
+
         setSimilar(
-          (res.items || []).filter(item => item.id !== gif?.id)
+            items.filter(item => item.id !== gif?.id)
         );
-      });
-  }, [gif]);
+
+        } catch (err) {
+        console.error('GIF Error:', err);
+        }
+    };
+
+    loadSimilar();
+    }, [gif]);
 
   if (!gif) {
     return <div>GIF not found</div>;
