@@ -132,12 +132,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Custom Hide Scrollbar */
-.no-scrollbar::-webkit-scrollbar {
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
-.no-scrollbar {
+.no-scrollbar,
+.scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Mobile bottom nav clearance */
+@media (max-width: 767px) {
+  main {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Shimmer animation for loading skeletons */

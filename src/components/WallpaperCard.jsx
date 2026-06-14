@@ -4,10 +4,12 @@ import { motion } from 'framer-motion';
 import { Heart, Download, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites, addDownload } from '../services/db';
+import { usePreview } from '../context/PreviewContext';
 
-export function WallpaperCard({ wallpaper, onFavoriteChange, onLoadError }) {
+export function WallpaperCard({ wallpaper, onFavoriteChange, onLoadError, allWallpapers }) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { openPreview } = usePreview();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -29,7 +31,12 @@ export function WallpaperCard({ wallpaper, onFavoriteChange, onLoadError }) {
   }, [user, wallpaper.id]);
 
   const handleCardClick = () => {
-    navigate(`/wallpaper/${wallpaper.id}`);
+    // On mobile, open the immersive preview modal
+    if (window.innerWidth < 768) {
+      openPreview(wallpaper, allWallpapers || [wallpaper]);
+    } else {
+      navigate(`/wallpaper/${wallpaper.id}`);
+    }
   };
 
   const handleFavorite = async (e) => {

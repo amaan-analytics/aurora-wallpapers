@@ -11,6 +11,7 @@ import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { AdminRoute } from './components/AdminRoute';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { ImagePreviewModal } from './components/ImagePreviewModal';
 
 // Pages
 import { Home } from './pages/Home';
@@ -106,6 +107,9 @@ function App() {
 
             {/* Mobile Navigation */}
             <MobileBottomNav />
+
+            {/* Fullscreen Preview Modal (mobile) */}
+            <ImagePreviewModal />
 
             {/* Footer */}
             <footer className="w-full border-t border-border-theme/30 bg-card-theme/10 pt-10 pb-28 md:pb-10 text-center transition-all duration-300">

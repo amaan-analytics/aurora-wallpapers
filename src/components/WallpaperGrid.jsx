@@ -30,7 +30,7 @@ function useColumnCount() {
   const getCount = () => {
     if (typeof window === 'undefined') return 3;
     const w = window.innerWidth;
-    if (w < 640) return 1;      // Mobile: 1 card per row
+    if (w < 640) return 2;      // Mobile: 2 columns (Pinterest-style)
     if (w < 1024) return 2;     // Tablet: 2 cards per row
     if (w < 1440) return 3;     // Small/Medium Desktop: 3 cards per row
     return 4;                   // Large Desktop: 4 cards per row maximum
@@ -112,18 +112,19 @@ export function WallpaperGrid({ wallpapers, loading, hasMore, onLoadMore, onFavo
     <div className="w-full max-w-7xl mx-auto px-4 py-4">
       {/* JS-driven masonry: fixed columns, items appended to shortest column */}
       <div
-        className="flex gap-4 sm:gap-5 md:gap-6 w-full items-start"
+        className="flex gap-2.5 sm:gap-5 md:gap-6 w-full items-start"
         style={{ alignItems: 'flex-start' }}
       >
         {columns.map((colWallpapers, colIdx) => (
           <div
             key={colIdx}
-            className="flex flex-col gap-4 sm:gap-5 md:gap-6 flex-1 min-w-0"
+            className="flex flex-col gap-2.5 sm:gap-5 md:gap-6 flex-1 min-w-0"
           >
             {colWallpapers.map((wallpaper) => (
               <WallpaperCard
                 key={wallpaper.id}
                 wallpaper={wallpaper}
+                allWallpapers={uniqueWallpapers}
                 onFavoriteChange={onFavoriteChange}
                 onLoadError={handleLoadError}
               />

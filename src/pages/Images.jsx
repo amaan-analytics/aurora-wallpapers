@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Sparkles, Search } from 'lucide-react';
 import { getImages, resetImagesPageOffset } from '../services/api';
 import { DiscoveryGrid } from '../components/DiscoveryGrid';
+import { CategoryChips } from '../components/CategoryChips';
 import { SEO } from '../components/SEO';
 
 const CATEGORIES = [
@@ -133,8 +134,13 @@ export function Images() {
         </div>
       </section>
 
-      {/* Category Chips */}
-      <section className="max-w-7xl mx-auto px-4 py-4 space-y-4">
+      {/* Mobile-only: Scrollable Category Chips */}
+      <div className="md:hidden sticky top-12 z-40" style={{ background: 'rgba(11,11,15,0.9)', backdropFilter: 'blur(12px)' }}>
+        <CategoryChips />
+      </div>
+
+      {/* Category Chips (desktop only) */}
+      <section className="hidden md:block max-w-7xl mx-auto px-4 py-4 space-y-4">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
           {CATEGORIES.map((cat) => (
             <button

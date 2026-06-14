@@ -1,75 +1,87 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, User } from 'lucide-react';
+import { Home, Image, Video, Layers, Sparkles, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+const NAV_ITEMS = [
+  { label: 'Home',       icon: Home,     to: '/' },
+  { label: 'Wallpapers', icon: Layers,   to: '/wallpapers' },
+  { label: 'Images',     icon: Image,    to: '/images' },
+  { label: 'Videos',     icon: Video,    to: '/videos' },
+  { label: 'GIFs',       icon: Sparkles, to: '/gifs' },
+  { label: 'Profile',    icon: User,     to: '/profile', requiresAuth: true },
+];
 
 export function MobileBottomNav() {
   const { user } = useAuth();
   const location = useLocation();
   const path = location.pathname;
 
-  // Do not show bottom nav on Detail page to maximize image preview space and avoid conflict with the fixed download bar
-  if (path.startsWith('/wallpaper/')) {
+  // Hide on detail pages
+  if (path.startsWith('/wallpaper/') || path.startsWith('/video/') || path.startsWith('/image/')) {
     return null;
   }
 
-  const isActive = (targetPath, searchCheck = null) => {
-    if (searchCheck) {
-      return path === targetPath && location.search.includes(searchCheck);
-    }
-    if (targetPath === '/') {
-      return path === '/' && !location.search.includes('focus=search');
-    }
-    return path.startsWith(targetPath) && !location.search.includes('tab=favorites');
+  const isActive = (item) => {
+    if (item.to === '/') return path === '/';
+    return path.startsWith(item.to);
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-40 md:hidden bg-card-theme/75 backdrop-blur-xl border border-border-theme/40 rounded-2xl py-2.5 px-6 flex justify-around items-center shadow-2xl">
-      {/* Home */}
-      <Link 
-        to="/" 
-        className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-          isActive('/') ? 'text-accent-theme scale-105' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <Home className="w-5 h-5" />
-        <span className="text-[9px] font-bold">Home</span>
-      </Link>
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        background: 'rgba(11,11,15,0.88)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+      }}
+    >
+      <div className="flex justify-around items-end px-1 pt-2 pb-2">
+        {NAV_ITEMS.map((item) => {
+          const active = isActive(item);
+          const targetPath = item.requiresAuth && !user ? '/login' : item.to;
+          const Icon = item.icon;
 
-      {/* Explore / Search */}
-      <Link 
-        to="/explore" 
-        className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-          path === '/explore' ? 'text-accent-theme scale-105' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <Search className="w-5 h-5" />
-        <span className="text-[9px] font-bold">Explore</span>
-      </Link>
+          return (
+            <Link
+              key={item.label}
+              to={targetPath}
+              className="flex flex-col items-center gap-0.5 min-w-0 flex-1 py-1 relative active:scale-90 transition-transform"
+              style={{ WebkitTapHighlightColor: 'transparent' }}
+            >
+              {/* Glow pill behind active icon */}
+              {active && (
+                <span
+                  className="absolute inset-x-2 top-0.5 h-7 rounded-full"
+                  style={{
+                    background: 'rgba(124,92,252,0.18)',
+                    boxShadow: '0 0 12px 3px rgba(124,92,252,0.35)',
+                  }}
+                />
+              )}
 
-      {/* Favorites Tab */}
-      <Link 
-        to={user ? "/profile?tab=favorites" : "/login"} 
-        className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-          path === '/profile' && location.search.includes('tab=favorites') ? 'text-accent-theme scale-105' : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <Heart className="w-5 h-5" />
-        <span className="text-[9px] font-bold">Saved</span>
-      </Link>
+              <span className="relative z-10 flex items-center justify-center w-6 h-6">
+                <Icon
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    active ? 'text-[#7c5cfc] drop-shadow-[0_0_6px_rgba(124,92,252,0.8)]' : 'text-white/45'
+                  }`}
+                  strokeWidth={active ? 2.2 : 1.8}
+                />
+              </span>
 
-      {/* Profile / Account */}
-      <Link 
-        to={user ? "/profile" : "/login"} 
-        className={`flex flex-col items-center gap-1 transition-all active:scale-95 ${
-          isActive('/profile') || path === '/login' || path === '/signup'
-            ? 'text-accent-theme scale-105'
-            : 'text-text-secondary hover:text-text-primary'
-        }`}
-      >
-        <User className="w-5 h-5" />
-        <span className="text-[9px] font-bold">Account</span>
-      </Link>
-    </div>
+              <span
+                className={`text-[9px] font-semibold tracking-tight transition-colors ${
+                  active ? 'text-[#a890ff]' : 'text-white/35'
+                }`}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }

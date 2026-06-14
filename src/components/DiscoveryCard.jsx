@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 import { Heart, Download, Share2, Check, ExternalLink, Play, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { addFavorite, removeFavorite, getUserFavorites, addDownload } from '../services/db';
+import { usePreview } from '../context/PreviewContext';
 
-export function DiscoveryCard({ item, onFavoriteChange, onLoadError }) {
+export function DiscoveryCard({ item, onFavoriteChange, onLoadError, allItems }) {
   const [hasError, setHasError] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { openPreview } = usePreview();
   const [isFavorited, setIsFavorited] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareFeedback, setShareFeedback] = useState(false);
@@ -37,6 +39,12 @@ export function DiscoveryCard({ item, onFavoriteChange, onLoadError }) {
   }, [user, item.id]);
 
   const handleCardClick = () => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      // Open immersive preview modal on mobile
+      openPreview(item, allItems || [item]);
+      return;
+    }
     if (item.type === 'wallpaper') {
       navigate(`/wallpaper/${item.id}`);
     } else if (item.type === 'video') {

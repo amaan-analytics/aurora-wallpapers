@@ -117,17 +117,17 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 glass-nav transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16 gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-12 sm:h-16 gap-3">
           
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 group flex-shrink-0" onClick={() => navigate('/')}>
             <img
               src="/icons/icon-512.png"
               alt="Aurora Logo"
-              className="w-9 h-9 md:w-[42px] md:h-[42px] rounded-xl object-cover transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_10px_rgba(123,79,255,0.8)]"
+              className="w-8 h-8 sm:w-[42px] sm:h-[42px] rounded-xl object-cover transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_10px_rgba(123,79,255,0.8)]"
             />
-            <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-text-primary via-[#b9a5ff] to-accent-theme bg-clip-text text-transparent hidden sm:inline-block">
+            <span className="font-extrabold text-lg sm:text-xl tracking-tight bg-gradient-to-r from-text-primary via-[#b9a5ff] to-accent-theme bg-clip-text text-transparent">
               Aurora
             </span>
           </Link>
@@ -154,8 +154,8 @@ export function Navbar() {
             </Link>
           </div>
 
-          {/* Search bar (Always visible and responsive) */}
-          <form onSubmit={handleSearchSubmit} className="flex flex-grow max-w-[160px] sm:max-w-xs md:max-w-md relative mx-1.5 sm:mx-4">
+          {/* Search bar: slimmer on mobile, full on desktop */}
+          <form onSubmit={handleSearchSubmit} className="flex flex-grow max-w-[200px] sm:max-w-xs md:max-w-md relative mx-1.5 sm:mx-4">
             <div className="relative w-full">
               <Search className="absolute left-2.5 md:left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 md:w-4 md:h-4 text-text-secondary" />
               <input
@@ -298,22 +298,13 @@ export function Navbar() {
 
           </div>
 
-          {/* Mobile Menu Toggler */}
+          {/* Mobile: show theme toggle only — bottom nav handles navigation */}
           <div className="flex md:hidden items-center gap-2">
-            
-            {/* Quick theme toggler for mobile */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-text-secondary hover:text-text-primary rounded-xl"
+              className="p-1.5 text-text-secondary hover:text-text-primary rounded-xl"
             >
-              {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
-            </button>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-text-secondary hover:text-text-primary rounded-xl"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
           </div>
 
