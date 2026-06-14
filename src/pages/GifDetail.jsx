@@ -18,6 +18,7 @@ export default function GifDetail() {
   const gif = location.state?.gif;
 
   const [similar, setSimilar] = useState([]);
+  
   const navigate = useNavigate();
 
   const [isFavorited, setIsFavorited] = useState(false);
@@ -25,26 +26,25 @@ export default function GifDetail() {
   const [shareFeedback, setShareFeedback] = useState(false);
 
   useEffect(() => {
-    const loadSimilar = async () => {
-        try {
-        const res = await getGIFs('', 'Trending', 1, 12);
+      if (!gif) return;
 
-        console.log('GIF API Response:', res);
+      const keyword =
+        gif.title
+          ?.split(' ')
+          ?.filter(word => word.length > 3)
+          ?.slice(0, 2)
+          ?.join(' ') || 'funny';
 
-        const items = res?.items || [];
+      getGIFs(keyword, '', 1, 12)
+        .then(res => {
+          setSimilar(
+            (res.items || []).filter(
+              item => item.id !== gif.id
+            )
+          );
+        })
+        .catch(console.error);
 
-        console.log('Items:', items);
-
-        setSimilar(
-            items.filter(item => item.id !== gif?.id)
-        );
-
-        } catch (err) {
-        console.error('GIF Error:', err);
-        }
-    };
-
-    loadSimilar();
     }, [gif]);
 
   if (!gif) {

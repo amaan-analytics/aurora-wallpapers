@@ -354,11 +354,17 @@ export const getGIFs = async (queryText = '', category = 'Trending', page = 1, p
   try {
     const offset = (page - 1) * perPage;
     // Map keywords for category selections if no custom search is requested
-    const targetQuery = queryText || (category === 'Trending' ? '' : category);
+    const targetQuery = queryText || (category === 'Trending' ? 'trending' : category);
     
-    const giphyUrl = targetQuery
-      ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(targetQuery)}&limit=${perPage}&offset=${offset}&rating=g`
-      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=${perPage}&offset=${RANDOM_GIF_OFFSET + offset}&rating=g`;
+    const giphyUrl = !targetQuery || category === "Trending"
+    ? `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=${perPage}&offset=${offset}&rating=g`
+    : `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(targetQuery)}&limit=${perPage}&offset=${offset}&rating=g`;
+   
+    console.log("GIF URL:", giphyUrl);
+    console.log("GIPHY KEY:", GIPHY_API_KEY);
+    console.log("isGiphyMock:", isGiphyMock);
+    console.log("targetQuery:", targetQuery);
+    console.log("URL:", giphyUrl);
     const res = await fetch(giphyUrl);
     if (!res.ok) throw new Error("Giphy API Error");
     
