@@ -2,13 +2,13 @@
 // Integrates Unsplash, Pixabay Video, Giphy, and Pexels APIs with stable mock fallbacks
 
 const PEXELS_API_KEY = import.meta.env.VITE_PEXELS_API_KEY;
-const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_ACCESS_KEY;
 const PIXABAY_API_KEY = import.meta.env.VITE_PIXABAY_API_KEY;
 const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY;
+const RANDOM_VIDEO_PAGE = Math.floor(Math.random() * 50) + 1;
+const RANDOM_GIF_OFFSET = Math.floor(Math.random() * 1000);
 
 // Mock mode flags
 const isPexelsMock = !PEXELS_API_KEY || PEXELS_API_KEY.includes('placeholder') || PEXELS_API_KEY === '';
-const isUnsplashMock = !UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY.includes('placeholder') || UNSPLASH_ACCESS_KEY === '';
 const isPixabayMock = !PIXABAY_API_KEY || PIXABAY_API_KEY.includes('placeholder') || PIXABAY_API_KEY === '';
 const isGiphyMock = !GIPHY_API_KEY || GIPHY_API_KEY.includes('placeholder') || GIPHY_API_KEY === '';
 
@@ -71,98 +71,75 @@ const getImagesPageOffset = () => {
   return imagesPageOffset;
 };
 
-export const getImages = async (queryText = '', page = 1, perPage = 16) => {
-  if (isPixabayMock) {
-    // Return high quality mock images from Pixabay mock
-    const cacheKey = `images_${queryText.toLowerCase() || 'curated'}`;
-    if (page === 1) delete mockSessionCache[cacheKey];
-
-    let list = [];
-    if (mockSessionCache[cacheKey]) {
-      list = mockSessionCache[cacheKey];
-    } else {
-      list = MOCK_IMAGES_LIST.filter(img => 
-        !queryText || 
-        img.title.toLowerCase().includes(queryText.toLowerCase()) || 
-        img.category.toLowerCase().includes(queryText.toLowerCase())
-      );
-      if (list.length === 0) list = MOCK_IMAGES_LIST;
-      list = shuffleArray(list).map(item => ({
-        ...item,
-        id: item.id + Math.floor(Math.random() * 10000)
-      }));
-      mockSessionCache[cacheKey] = list;
-    }
-
-    const startIndex = (page - 1) * perPage;
-    
-    // Seed extra mock items for infinite scroll simulation if we hit end
-    if (startIndex >= list.length && list.length > 0) {
-      const neededLoops = Math.ceil((startIndex + perPage) / list.length);
-      let expandedList = [];
-      for(let i = 0; i < neededLoops; i++) {
-        expandedList.push(...list.map(item => ({...item, id: item.id + "_" + i})));
-      }
-      list = expandedList;
-    }
-
-    const paginated = list.slice(startIndex, startIndex + perPage);
-
-    return {
-      items: paginated,
-      page,
-      per_page: perPage,
-      total_results: list.length * 10, // Simulated total
-      next_page: page + 1
-    };
-  }
-
-  // Real Mode - fetch from Pixabay
+export const getImages = async (
+  queryText = '',
+  page = 1,
+  perPage = 16
+) => {
   try {
-    let targetPage = page;
-    let extraParams = '';
-    if (!queryText) {
-      extraParams = '&editors_choice=true';
-      targetPage = page + getImagesPageOffset();
+    const randomQueries = [
+        'people',
+        'portrait',
+        'lifestyle',
+        'travel',
+        'fashion',
+        'business',
+        'street photography',
+        'nature person',
+        'creative people',
+        'urban life'
+      ];
+
+      const searchQuery = queryText || randomQueries[
+        Math.floor(Math.random() * randomQueries.length)
+      ];
+
+    const url =
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(
+        searchQuery
+      )}&page=${page}&per_page=${perPage}`;
+
+    const res = await fetch(url, {
+      headers: {
+        Authorization: PEXELS_API_KEY
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error('Pexels API Error');
     }
-    const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(queryText)}&page=${targetPage}&per_page=${perPage}&image_type=photo&safesearch=true${extraParams}`;
-    
-    const res = await fetch(pixabayUrl);
-    if (!res.ok) throw new Error("Pixabay API Error");
-    
+
     const data = await res.json();
-    const items = (data.hits || [])
-      .filter(item => isSafeContent(item.tags) && isSafeContent(item.user))
-      .map(item => ({
-        id: `pixabay_img_${item.id}`,
-        type: 'image',
-        width: item.imageWidth,
-        height: item.imageHeight,
-        avg_color: '#15151a',
-        photographer: item.user || 'Pixabay Creator',
-        photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
-        src: {
-          original: item.largeImageURL,
-          large2x: item.largeImageURL,
-          large: item.webformatURL,
-          medium: item.webformatURL,
-          small: item.previewURL,
-          thumbnail: item.previewURL
-        },
-        title: item.tags || 'Creative Image',
-        downloadUrl: item.largeImageURL
-      }));
+
+    const items = (data.photos || []).map(photo => ({
+      id: `pexels_img_${photo.id}`,
+      type: 'image',
+      width: photo.width,
+      height: photo.height,
+      avg_color: photo.avg_color,
+      photographer: photo.photographer,
+      photographer_url: photo.photographer_url,
+      src: photo.src,
+      title: photo.alt || 'Creative Photo'
+    }));
 
     return {
       items,
       page,
       per_page: perPage,
-      total_results: data.totalHits || items.length * 5,
-      next_page: items.length >= perPage ? page + 1 : null
+      total_results: data.total_results || 0,
+      next_page: data.next_page ? page + 1 : null
     };
   } catch (error) {
-    console.error("Discovery API Error getting images:", error);
-    return { items: [], page, per_page: perPage, total_results: 0, next_page: null };
+    console.error('Pexels Images Error:', error);
+
+    return {
+      items: [],
+      page,
+      per_page: perPage,
+      total_results: 0,
+      next_page: null
+    };
   }
 };
 
@@ -223,7 +200,7 @@ export const getVideos = async (queryText = '', page = 1, perPage = 16) => {
     if (!isPexelsMock) {
       const pexelsUrl = queryText
         ? `https://api.pexels.com/videos/search?query=${encodeURIComponent(queryText)}&page=${page}&per_page=${Math.ceil(perPage / 2)}`
-        : `https://api.pexels.com/videos/popular?page=${page}&per_page=${Math.ceil(perPage / 2)}`;
+        : `https://api.pexels.com/videos/popular?page=${RANDOM_VIDEO_PAGE}&per_page=${Math.ceil(perPage / 2)}`;
       
       promises.push(
         fetch(pexelsUrl, { headers: { Authorization: PEXELS_API_KEY } })
@@ -381,13 +358,12 @@ export const getGIFs = async (queryText = '', category = 'Trending', page = 1, p
     
     const giphyUrl = targetQuery
       ? `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(targetQuery)}&limit=${perPage}&offset=${offset}&rating=g`
-      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=${perPage}&offset=${offset}&rating=g`;
-
+      : `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=${perPage}&offset=${RANDOM_GIF_OFFSET + offset}&rating=g`;
     const res = await fetch(giphyUrl);
     if (!res.ok) throw new Error("Giphy API Error");
     
     const data = await res.json();
-    const items = (data.data || []).map(item => ({
+    const items = shuffleArray((data.data || []).map(item => ({
       id: `giphy_${item.id}`,
       type: 'gif',
       width: parseInt(item.images?.original?.width || '400'),
@@ -398,7 +374,8 @@ export const getGIFs = async (queryText = '', category = 'Trending', page = 1, p
       photographer: item.username || item.user?.display_name || 'Giphy Creator',
       photographer_url: item.url || 'https://giphy.com',
       title: item.title || 'Animated GIF'
-    }));
+    }))
+    );
 
     return {
       items,
@@ -472,39 +449,43 @@ export const getImageById = async (id) => {
     return MOCK_IMAGES_LIST.find(img => img.id === baseId) || MOCK_IMAGES_LIST[0];
   }
 
-  if (id.startsWith('pixabay_img_')) {
-    const rawId = id.replace('pixabay_img_', '');
-    try {
-      const pixabayUrl = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&id=${rawId}`;
-      const res = await fetch(pixabayUrl);
-      if (!res.ok) throw new Error("Pixabay API Error");
-      const data = await res.json();
-      const item = data.hits?.[0];
-      if (!item) return null;
-      return {
-        id: `pixabay_img_${item.id}`,
-        type: 'image',
-        width: item.imageWidth,
-        height: item.imageHeight,
-        avg_color: '#15151a',
-        photographer: item.user || 'Pixabay Creator',
-        photographer_url: `https://pixabay.com/users/${item.user}-${item.user_id}/`,
-        src: {
-            original: item.largeImageURL,
-            large2x: item.largeImageURL,
-            large: item.webformatURL,
-            medium: item.webformatURL,
-            small: item.previewURL,
-            thumbnail: item.previewURL
-          },
-        title: item.tags || 'Creative Image',
-        downloadUrl: item.largeImageURL
-      };
-    } catch (error) {
-      console.error("getImageById error:", error);
-      return null;
+ if (id.startsWith('pexels_img_')) {
+  const rawId = id.replace('pexels_img_', '');
+
+  try {
+    const res = await fetch(
+      `https://api.pexels.com/v1/photos/${rawId}`,
+      {
+        headers: {
+          Authorization: PEXELS_API_KEY
+        }
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('Pexels API Error');
     }
+
+    const photo = await res.json();
+
+    return {
+      id: `pexels_img_${photo.id}`,
+      type: 'image',
+      width: photo.width,
+      height: photo.height,
+      avg_color: photo.avg_color,
+      photographer: photo.photographer,
+      photographer_url: photo.photographer_url,
+      src: photo.src,
+      title: photo.alt || 'Creative Photo',
+      downloadUrl: photo.src.original
+    };
+
+  } catch (error) {
+    console.error('getImageById error:', error);
+    return null;
   }
+}
 
   return MOCK_IMAGES_LIST.find(img => img.id === id) || MOCK_IMAGES_LIST[0];
 };
@@ -929,3 +910,4 @@ const MOCK_GIFS_LIST = [
     tags: ['Trending', 'Reactions', 'Funny']
   }
 ];
+

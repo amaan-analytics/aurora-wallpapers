@@ -6,8 +6,16 @@ import { DiscoveryGrid } from '../components/DiscoveryGrid';
 import { SEO } from '../components/SEO';
 
 const CATEGORIES = [
-  'Nature', 'Abstract', 'Space', 'Cyberpunk', 'Minimalist', 
-  'Technology', 'Architecture', 'Mountains', 'Ocean', 'AI Art'
+  'Portrait',
+  'Business',
+  'Lifestyle',
+  'Travel',
+  'Fashion',
+  'Photography',
+  'People',
+  'Office',
+  'Creative',
+  'Street'
 ];
 
 export function Images() {
@@ -99,7 +107,7 @@ export function Images() {
         <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-accent-theme/10 border border-accent-theme/20 text-accent-theme text-xs font-semibold rounded-full">
             <Sparkles className="w-3.5 h-3.5" />
-            Pexels & Unsplash Integrated
+            Pexels Photography Collection
           </div>
 
           <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary leading-tight">
@@ -107,7 +115,7 @@ export function Images() {
           </h1>
 
           <p className="text-sm sm:text-base text-text-secondary max-w-2xl mx-auto">
-            Discover exquisite HD creative designs, portraits, and photography assets.
+            Discover professional portraits, lifestyle photography, business photos, and creative visual content.
           </p>
 
           <form onSubmit={handleSearchSubmit} className="max-w-xl mx-auto flex items-center relative mt-8">
@@ -115,7 +123,7 @@ export function Images() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
               <input
                 type="text"
-                placeholder="Search images (e.g. Vintage, Ocean, Abstract...)"
+                placeholder="Search portraits, people, travel, business..."
                 value={localSearch}
                 onChange={(e) => setLocalSearch(e.target.value)}
                 className="w-full pl-12 pr-4 py-3 text-base rounded-2xl text-text-primary glass-input focus:ring-2 focus:ring-accent-theme shadow-xl focus:scale-[1.01] transition-all duration-300"

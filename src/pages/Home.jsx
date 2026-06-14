@@ -25,7 +25,7 @@ export function Home() {
         const randomPage = () => Math.floor(Math.random() * 10) + 1;
         const [wallRes, imgRes, vidRes, gifRes] = await Promise.all([
           getCuratedWallpapers(randomPage(), 12, true),
-          getImages('', randomPage(), 12),
+          getImages('portrait', randomPage(), 12),
           getVideos('', randomPage(), 12),
           getGIFs('', 'Trending', randomPage(), 12)
         ]);
