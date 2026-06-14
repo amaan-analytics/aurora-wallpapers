@@ -18,17 +18,17 @@
 
 :root {
   /* Default: Dark Theme */
-  --bg-color: #050505;
-  --surface-color: #0f0f12;
-  --card-color: #15151a;
-  --border-color: #23232b;
+  --bg-color: #0B0B0F;
+  --surface-color: #121218;
+  --card-color: #161622;
+  --border-color: #242432;
   --text-primary-color: #ffffff;
   --text-secondary-color: #a0a0b0;
   --accent-color: #7C5CFF;
   
-  --surface-rgb: 15, 15, 18;
+  --surface-rgb: 18, 18, 24;
   --accent-rgb: 124, 92, 255;
-  --border-rgb: 35, 35, 43;
+  --border-rgb: 36, 36, 50;
 }
 
 :root.light {
@@ -149,4 +149,31 @@ h1, h2, h3, h4, h5, h6 {
 /* Lazy-load fade-in for images */
 img {
   transition: opacity 0.4s ease, transform 0.6s ease, filter 0.4s ease;
+}
+
+/* Safe-area support for mobile */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Custom premium glow shadow */
+.nav-glow {
+  box-shadow: 0 -4px 24px -1px rgba(var(--accent-rgb), 0.12), 0 0 1px 0 rgba(var(--accent-rgb), 0.2);
+}
+
+.active-tab-glow {
+  filter: drop-shadow(0 0 8px rgba(var(--accent-rgb), 0.6));
+}
+
+/* Pull-to-refresh container indicators */
+.ptr-loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

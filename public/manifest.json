@@ -35,8 +35,8 @@
     }
   ],
   "start_url": "/",
-  "background_color": "#0D0F1A",
-  "theme_color": "#0D0F1A",
+  "background_color": "#0B0B0F",
+  "theme_color": "#0B0B0F",
   "display": "standalone",
   "orientation": "portrait-primary",
   "categories": ["personalization", "utilities"],

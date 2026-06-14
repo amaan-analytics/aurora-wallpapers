@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Context Providers
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PreviewProvider } from './context/PreviewContext';
 
 // Components
 import { Navbar } from './components/Navbar';
@@ -30,8 +31,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Router>
-          <div className="min-h-screen flex flex-col bg-background-theme text-text-primary transition-colors duration-300">
+        <PreviewProvider>
+          <Router>
+            <div className="min-h-screen flex flex-col bg-background-theme text-text-primary transition-colors duration-300">
 
             {/* Navigation Header */}
             <Navbar />
@@ -130,6 +132,7 @@ function App() {
 
           </div>
         </Router>
+        </PreviewProvider>
       </AuthProvider>
     </ThemeProvider>
   );
