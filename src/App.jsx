@@ -27,6 +27,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Profile } from './pages/Profile';
 import { Admin } from './pages/Admin';
+import GifDetail from './pages/GifDetail';
 
 function App() {
   return (
@@ -74,6 +75,9 @@ function App() {
 
                 {/* Image Detail */}
                 <Route path="/image/:id" element={<ImageDetail />} />
+
+                {/* GIF Detail */}
+                <Route path="/gif/:id" element={<GifDetail />} />
 
                 {/* Auth Pages */}
                 <Route path="/login" element={<Login />} />

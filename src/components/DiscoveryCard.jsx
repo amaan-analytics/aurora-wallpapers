@@ -39,22 +39,35 @@ export function DiscoveryCard({ item, onFavoriteChange, onLoadError, allItems })
   }, [user, item.id]);
 
   const handleCardClick = () => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      // Open immersive preview modal on mobile
-      openPreview(item, allItems || [item]);
+    if (item.type === 'wallpaper') {
+      navigate(`/wallpaper/${item.id}`, {
+        state: { wallpaper: item }
+      });
       return;
     }
-    if (item.type === 'wallpaper') {
-      navigate(`/wallpaper/${item.id}`);
-    } else if (item.type === 'video') {
-      navigate(`/video/${item.id}`, { state: { video: item } });
-    } else if (item.type === 'image') {
-      navigate(`/image/${item.id}`, { state: { image: item } });
-    } else {
-      // Open direct media link in a new tab
-      window.open(item.src?.original || item.video_url || item.gif_url, '_blank');
+
+    if (item.type === 'video') {
+      navigate(`/video/${item.id}`, {
+        state: { video: item }
+      });
+      return;
     }
+
+    if (item.type === 'image') {
+      navigate(`/image/${item.id}`, {
+        state: { image: item }
+      });
+      return;
+    }
+
+    if (item.type === 'gif') {
+      navigate(`/gif/${item.id}`, {
+        state: { gif: item }
+      });
+      return;
+    }
+
+    openPreview(item, allItems || [item]);
   };
 
   const handleFavorite = async (e) => {
