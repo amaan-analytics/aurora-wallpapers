@@ -16,7 +16,7 @@ import { ImagePreviewModal } from './components/ImagePreviewModal';
 // Pages
 import { Home } from './pages/Home';
 import { Wallpapers } from './pages/Wallpapers';
-import { Images } from './pages/Images';
+import Images from './pages/Images';
 import { Videos } from './pages/Videos';
 import { GIFs } from './pages/GIFs';
 import { Explore } from './pages/Explore';
