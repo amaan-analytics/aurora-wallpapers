@@ -44,13 +44,36 @@ export function ImagePreviewModal() {
 
   // Lock body scroll when modal open
   useEffect(() => {
-    if (isPreviewOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isPreviewOpen]);
+      if (isPreviewOpen) {
+        document.body.style.overflow = 'hidden';
+
+        window.history.pushState(
+          { previewOpen: true },
+          '',
+          window.location.pathname
+        );
+      } else {
+        document.body.style.overflow = '';
+      }
+
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }, [isPreviewOpen]);
+
+    useEffect(() => {
+      const handlePopState = () => {
+        if (isPreviewOpen) {
+          closePreview();
+        }
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }, [isPreviewOpen, closePreview]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -179,7 +202,7 @@ export function ImagePreviewModal() {
             style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
           >
             <button
-              onClick={closePreview}
+              onClick={() => {window.history.back();}}
               className="p-2 rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20 active:scale-90 transition-all text-white"
             >
               <X className="w-5 h-5" />

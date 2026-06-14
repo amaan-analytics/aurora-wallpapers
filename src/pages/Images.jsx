@@ -1,178 +1,181 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Sparkles, Search } from 'lucide-react';
-import { getImages, resetImagesPageOffset } from '../services/api';
-import { DiscoveryGrid } from '../components/DiscoveryGrid';
-import { CategoryChips } from '../components/CategoryChips';
-import { SEO } from '../components/SEO';
+import React, { useRef, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const CATEGORIES = [
-  'Portrait',
-  'Business',
-  'Lifestyle',
-  'Travel',
-  'Fashion',
-  'Photography',
-  'People',
-  'Office',
-  'Creative',
-  'Street'
+const IMAGE_CATEGORIES = [
+  { label: '📸 Portrait', query: 'Portrait' },
+  { label: '💼 Business', query: 'Business' },
+  { label: '🌿 Lifestyle', query: 'Lifestyle' },
+  { label: '✈️ Travel', query: 'Travel' },
+  { label: '👗 Fashion', query: 'Fashion' },
+  { label: '📷 Photography', query: 'Photography' },
+  { label: '🧑 People', query: 'People' },
+  { label: '🏢 Office', query: 'Office' },
+  { label: '🎨 Creative', query: 'Creative' },
+  { label: '🚶 Street', query: 'Street' },
 ];
 
-export function Images() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
-  const activeCategory = searchParams.get('category') || '';
+const DEFAULT_CATEGORIES = [
+  { label: '🔥 Trending', query: 'trending' },
+  { label: '🌿 Nature', query: 'Nature' },
+  { label: '🌌 Space', query: 'Space' },
+  { label: '🤖 AI Art', query: 'AI Art' },
+  { label: '🎮 Gaming', query: 'Gaming' },
+  { label: '🌊 Ocean', query: 'Ocean' },
+  { label: '🏙️ City', query: 'Architecture' },
+  { label: '🚗 Cars', query: 'Cars' },
+  { label: '⛰️ Mountains', query: 'Mountains' },
+  { label: '💻 Tech', query: 'Technology' },
+  { label: '🎨 Abstract', query: 'Abstract' },
+  { label: '✨ Minimalist', query: 'Minimalist' },
+  { label: '🌸 Anime', query: 'Anime Inspired' },
+  { label: '🌆 Cyberpunk', query: 'Cyberpunk' },
+];
 
-  const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [localSearch, setLocalSearch] = useState('');
+export function CategoryChips() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const scrollRef = useRef(null);
 
-  useEffect(() => {
-    setLocalSearch(searchQuery);
-  }, [searchQuery]);
+  const [showLeft, setShowLeft] = useState(false);
+  const [showRight, setShowRight] = useState(true);
 
-  useEffect(() => {
-    resetImagesPageOffset();
-    setPage(1);
-    setImages([]);
-    setHasMore(true);
-    fetchImages(1, true);
-  }, [searchQuery, activeCategory]);
+  const categories =
+    location.pathname === '/images'
+      ? IMAGE_CATEGORIES
+      : DEFAULT_CATEGORIES;
 
-  const fetchImages = async (pageNum, isReset = false) => {
-    if (loading) return;
-    setLoading(true);
+  const params = new URLSearchParams(location.search);
+  const activeCategory =
+    params.get('category') ||
+    params.get('search') ||
+    '';
 
-    try {
-      const targetQuery = searchQuery || activeCategory;
-      const res = await getImages(targetQuery, pageNum, 16);
-      // Only keep images that have a valid source URL
-      const newItems = (res.items || []).filter(
-        img => img && img.id && (img.preview_url || img.src?.large2x)
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+
+    const {
+      scrollLeft,
+      scrollWidth,
+      clientWidth,
+    } = scrollRef.current;
+
+    setShowLeft(scrollLeft > 10);
+    setShowRight(
+      scrollLeft < scrollWidth - clientWidth - 10
+    );
+  };
+
+  const scroll = (dir) => {
+    if (!scrollRef.current) return;
+
+    scrollRef.current.scrollBy({
+      left: dir * 160,
+      behavior: 'smooth',
+    });
+  };
+
+  const handleChipClick = (query) => {
+    const path = location.pathname;
+
+    if (query === 'trending') {
+      navigate(path);
+      return;
+    }
+
+    if (path === '/images') {
+      navigate(
+        `/images?category=${encodeURIComponent(query)}`
       );
-
-      setImages(prev => {
-        if (isReset) return newItems;
-        const existingIds = new Set(prev.map(p => p.id));
-        const filteredNew = newItems.filter(p => !existingIds.has(p.id));
-        return [...prev, ...filteredNew];
-      });
-
-      setHasMore(!!res.next_page);
-      setPage(pageNum);
-    } catch (err) {
-      console.error("Failed to load discovery images:", err);
-      setHasMore(false);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      fetchImages(page + 1);
-    }
-  };
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (localSearch.trim()) {
-      setSearchParams({ search: localSearch.trim() });
+    } else if (path === '/videos') {
+      navigate(
+        `/videos?category=${encodeURIComponent(query)}`
+      );
+    } else if (path === '/gifs') {
+      navigate(
+        `/gifs?category=${encodeURIComponent(query)}`
+      );
     } else {
-      setSearchParams({});
-    }
-  };
-
-  const handleCategoryClick = (cat) => {
-    if (activeCategory === cat) {
-      setSearchParams({});
-    } else {
-      setSearchParams({ category: cat });
+      navigate(
+        `/wallpapers?category=${encodeURIComponent(query)}`
+      );
     }
   };
 
   return (
-    <div className="min-h-screen pb-28 md:pb-16 relative">
-      <SEO 
-        title={searchQuery ? `Images matching "${searchQuery}"` : activeCategory ? `Category: ${activeCategory}` : 'High Resolution Images'}
-        description="Discover beautiful high resolution creative photography and digital images from Pexels and Unsplash."
-      />
+    <div className="relative w-full overflow-hidden">
+      {showLeft && (
+        <button
+          onClick={() => scroll(-1)}
+          className="absolute left-0 top-0 bottom-0 z-10 flex items-center justify-center w-8 pl-1"
+          style={{
+            background:
+              'linear-gradient(to right, #0B0B0F 60%, transparent)',
+          }}
+        >
+          <ChevronLeft className="w-4 h-4 text-white/60" />
+        </button>
+      )}
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden py-16 sm:py-20 px-4 bg-gradient-to-b from-surface-theme/20 via-background-theme/50 to-background-theme">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[250px] bg-accent-theme/10 rounded-full blur-[120px] pointer-events-none" />
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex gap-2 overflow-x-auto scrollbar-hide px-4 py-2"
+        style={{
+          scrollSnapType: 'x mandatory',
+        }}
+      >
+        {categories.map(({ label, query }) => {
+          const isActive =
+            activeCategory.toLowerCase() ===
+              query.toLowerCase() ||
+            (query === 'trending' &&
+              !activeCategory);
 
-        <div className="max-w-4xl mx-auto text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-accent-theme/10 border border-accent-theme/20 text-accent-theme text-xs font-semibold rounded-full">
-            <Sparkles className="w-3.5 h-3.5" />
-            Pexels Photography Collection
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-text-primary leading-tight">
-            High Fidelity <span className="bg-gradient-to-r from-accent-theme via-[#a890ff] to-[#dfd5ff] bg-clip-text text-transparent">Creative Photos</span>
-          </h1>
-
-          <p className="text-sm sm:text-base text-text-secondary max-w-2xl mx-auto">
-            Discover professional portraits, lifestyle photography, business photos, and creative visual content.
-          </p>
-
-          <form onSubmit={handleSearchSubmit} className="max-w-xl mx-auto flex items-center relative mt-8">
-            <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-secondary" />
-              <input
-                type="text"
-                placeholder="Search portraits, people, travel, business..."
-                value={localSearch}
-                onChange={(e) => setLocalSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 text-base rounded-2xl text-text-primary glass-input focus:ring-2 focus:ring-accent-theme shadow-xl focus:scale-[1.01] transition-all duration-300"
-              />
-            </div>
-          </form>
-        </div>
-      </section>
-
-      {/* Mobile-only: Scrollable Category Chips */}
-      <div className="md:hidden sticky top-12 z-40" style={{ background: 'rgba(11,11,15,0.9)', backdropFilter: 'blur(12px)' }}>
-        <CategoryChips />
+          return (
+            <button
+              key={query}
+              onClick={() =>
+                handleChipClick(query)
+              }
+              className="flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 active:scale-95"
+              style={
+                isActive
+                  ? {
+                      background:
+                        'linear-gradient(135deg, #7c5cfc, #a890ff)',
+                      color: '#fff',
+                      boxShadow:
+                        '0 0 12px rgba(124,92,252,0.5)',
+                    }
+                  : {
+                      background:
+                        'rgba(255,255,255,0.07)',
+                      color:
+                        'rgba(255,255,255,0.65)',
+                      border:
+                        '1px solid rgba(255,255,255,0.08)',
+                    }
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Category Chips (desktop only) */}
-      <section className="hidden md:block max-w-7xl mx-auto px-4 py-4 space-y-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar scroll-smooth">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => handleCategoryClick(cat)}
-              className={`flex-shrink-0 px-4 py-1.5 text-xs font-semibold rounded-full border transition-all duration-300 ${
-                activeCategory === cat
-                  ? 'bg-accent-theme border-accent-theme text-white shadow-lg'
-                  : 'bg-card-theme/60 border-border-theme/40 text-text-secondary hover:text-text-primary hover:border-accent-theme/25'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between border-t border-border-theme/30 pt-4 gap-4 flex-wrap">
-          <div className="text-xs text-text-secondary font-medium">
-            {searchQuery && `Showing results for "${searchQuery}"`}
-            {activeCategory && `Category: ${activeCategory}`}
-            {!searchQuery && !activeCategory && "Trending Images"}
-          </div>
-        </div>
-      </section>
-
-      {/* Grid container */}
-      <DiscoveryGrid 
-        items={images} 
-        loading={loading} 
-        hasMore={hasMore} 
-        onLoadMore={handleLoadMore} 
-      />
+      {showRight && (
+        <button
+          onClick={() => scroll(1)}
+          className="absolute right-0 top-0 bottom-0 z-10 flex items-center justify-center w-8 pr-1"
+          style={{
+            background:
+              'linear-gradient(to left, #0B0B0F 60%, transparent)',
+          }}
+        >
+          <ChevronRight className="w-4 h-4 text-white/60" />
+        </button>
+      )}
     </div>
   );
 }
